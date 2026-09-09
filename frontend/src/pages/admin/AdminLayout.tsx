@@ -246,7 +246,7 @@ export const AdminLayout: React.FC = () => {
       </aside>
 
       {/* Main Admin Content Area */}
-      <main className="flex-1 p-6 sm:p-8 lg:p-10 min-w-0 max-w-7xl">
+      <main className="flex-1 p-6 sm:p-8 lg:p-10 min-w-0 w-full">
         <Outlet />
       </main>
     </div>
