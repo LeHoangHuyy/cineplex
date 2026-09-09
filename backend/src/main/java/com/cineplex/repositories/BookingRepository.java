@@ -28,8 +28,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
            "LOWER(b.bookingCode) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(b.user.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(b.user.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(b.showtime.movie.title) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-           "ORDER BY b.createdAt DESC")
+           "LOWER(b.showtime.movie.title) LIKE LOWER(CONCAT('%', :search, '%')))")
     org.springframework.data.domain.Page<Booking> searchBookings(@Param("status") BookingStatus status, @Param("search") String search, org.springframework.data.domain.Pageable pageable);
 
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.status = 'CONFIRMED'")

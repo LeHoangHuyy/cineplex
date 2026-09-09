@@ -1,14 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Ticket, Search, QrCode, X, CheckCircle, Clock, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Ticket, Search, QrCode, X, CheckCircle, Clock, AlertCircle, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Booking, BookingStatus } from '../../types';
 import { adminApi } from '../../api';
 import { ETicketCard } from '../../components/customer/ETicketCard';
+
+const SORT_OPTIONS = [
+  { label: 'Mới nhất', sortBy: 'createdAt', direction: 'desc' },
+  { label: 'Cũ nhất', sortBy: 'createdAt', direction: 'asc' },
+  { label: 'Tổng tiền cao nhất', sortBy: 'totalAmount', direction: 'desc' },
+  { label: 'Tổng tiền thấp nhất', sortBy: 'totalAmount', direction: 'asc' },
+  { label: 'Mã đơn (A-Z)', sortBy: 'bookingCode', direction: 'asc' },
+  { label: 'Mã đơn (Z-A)', sortBy: 'bookingCode', direction: 'desc' },
+];
 
 export const BookingManagePage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -17,15 +28,17 @@ export const BookingManagePage: React.FC = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchBookings(currentPage, statusFilter, search);
+      fetchBookings(currentPage, statusFilter, search, sortBy, sortDir);
     }, 250);
     return () => clearTimeout(timer);
-  }, [currentPage, statusFilter, search]);
+  }, [currentPage, statusFilter, search, sortBy, sortDir]);
 
   const fetchBookings = async (
     page: number = currentPage,
     status: string = statusFilter,
-    query: string = search
+    query: string = search,
+    sort: string = sortBy,
+    dir: 'asc' | 'desc' = sortDir
   ) => {
     setLoading(true);
     try {
@@ -33,7 +46,9 @@ export const BookingManagePage: React.FC = () => {
         status === 'ALL' ? undefined : status,
         query.trim() ? query.trim() : undefined,
         page - 1,
-        ITEMS_PER_PAGE
+        ITEMS_PER_PAGE,
+        sort,
+        dir
       );
       setBookings(res.data.content || []);
       setTotalPages(res.data.totalPages || 1);
@@ -43,6 +58,27 @@ export const BookingManagePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(field);
+      setSortDir(field === 'totalAmount' || field === 'createdAt' ? 'desc' : 'asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const renderSortIcon = (field: string) => {
+    if (sortBy !== field) {
+      return <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-60 group-hover:opacity-100" />;
+    }
+    return sortDir === 'asc' ? (
+      <ArrowUp className="w-3.5 h-3.5 text-emerald-600" />
+    ) : (
+      <ArrowDown className="w-3.5 h-3.5 text-emerald-600" />
+    );
   };
 
   const handlePageChange = (newPage: number) => {
@@ -87,23 +123,46 @@ export const BookingManagePage: React.FC = () => {
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-2.5" />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
-          {['ALL', 'CONFIRMED', 'PENDING', 'EXPIRED', 'CANCELLED'].map((st) => (
-            <button
-              key={st}
-              onClick={() => {
-                setStatusFilter(st);
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            {['ALL', 'CONFIRMED', 'PENDING', 'EXPIRED', 'CANCELLED'].map((st) => (
+              <button
+                key={st}
+                onClick={() => {
+                  setStatusFilter(st);
+                  setCurrentPage(1);
+                }}
+                className={`py-1.5 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                  statusFilter === st
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                {st === 'ALL' ? 'Tất Cả' : st}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 border-t sm:border-t-0 sm:border-l border-slate-200 pt-2 sm:pt-0 sm:pl-3 w-full sm:w-auto">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Sắp xếp:</span>
+            <select
+              value={`${sortBy}-${sortDir}`}
+              onChange={(e) => {
+                const [field, dir] = e.target.value.split('-');
+                setSortBy(field);
+                setSortDir(dir as 'asc' | 'desc');
                 setCurrentPage(1);
               }}
-              className={`py-1.5 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                statusFilter === st
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-              }`}
+              aria-label="Sắp xếp danh sách đơn đặt vé"
+              className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
             >
-              {st === 'ALL' ? 'Tất Cả' : st}
-            </button>
-          ))}
+              {SORT_OPTIONS.map((opt) => (
+                <option key={`${opt.sortBy}-${opt.direction}`} value={`${opt.sortBy}-${opt.direction}`}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -111,13 +170,38 @@ export const BookingManagePage: React.FC = () => {
       <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-100 text-slate-600 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200">
+            <thead className="bg-slate-100 text-slate-600 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200 select-none">
               <tr>
-                <th className="py-4 px-5">Mã Đơn</th>
+                <th className="py-4 px-5">
+                  <button
+                    onClick={() => handleSort('bookingCode')}
+                    className="group flex items-center gap-1.5 hover:text-emerald-600 transition font-bold"
+                  >
+                    <span>Mã Đơn</span>
+                    {renderSortIcon('bookingCode')}
+                  </button>
+                </th>
                 <th className="py-4 px-4">Khách Hàng</th>
                 <th className="py-4 px-4">Phim & Suất Chiếu</th>
                 <th className="py-4 px-4">Ghế Đã Đặt</th>
-                <th className="py-4 px-4">Tổng Tiền</th>
+                <th className="py-4 px-4">
+                  <button
+                    onClick={() => handleSort('totalAmount')}
+                    className="group flex items-center gap-1.5 hover:text-emerald-600 transition font-bold"
+                  >
+                    <span>Tổng Tiền</span>
+                    {renderSortIcon('totalAmount')}
+                  </button>
+                </th>
+                <th className="py-4 px-4">
+                  <button
+                    onClick={() => handleSort('createdAt')}
+                    className="group flex items-center gap-1.5 hover:text-emerald-600 transition font-bold"
+                  >
+                    <span>Ngày Đặt</span>
+                    {renderSortIcon('createdAt')}
+                  </button>
+                </th>
                 <th className="py-4 px-4">Trạng Thái</th>
                 <th className="py-4 px-5 text-right">Chi Tiết</th>
               </tr>
@@ -125,13 +209,13 @@ export const BookingManagePage: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={8} className="py-12 text-center text-slate-400">
                     Đang tải danh sách đơn đặt vé...
                   </td>
                 </tr>
               ) : bookings.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={8} className="py-12 text-center text-slate-400">
                     Không tìm thấy đơn đặt vé nào.
                   </td>
                 </tr>
@@ -163,6 +247,9 @@ export const BookingManagePage: React.FC = () => {
                           style: 'currency',
                           currency: 'VND',
                         }).format(b.totalAmount)}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500 font-medium whitespace-nowrap">
+                        {b.createdAt ? new Date(b.createdAt).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
                       </td>
                       <td className="py-3.5 px-4">
                         <span

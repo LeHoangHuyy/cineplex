@@ -24,6 +24,13 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public PageResponse<AuthResponse> getAllUsers(String search, Pageable pageable) {
+        if (!pageable.getSort().isSorted()) {
+            pageable = org.springframework.data.domain.PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")
+            );
+        }
         String cleanSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         Page<User> userPage = userRepository.searchUsers(cleanSearch, pageable);
         List<AuthResponse> content = userPage.getContent().stream().map(u -> AuthResponse.builder()
@@ -33,6 +40,7 @@ public class UserService {
                 .phone(u.getPhone())
                 .role(u.getRole())
                 .status(u.getStatus())
+                .createdAt(u.getCreatedAt())
                 .build()).collect(Collectors.toList());
         return PageResponse.of(userPage, content);
     }

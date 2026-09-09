@@ -9,6 +9,7 @@ export interface User {
   role: Role;
   status: UserStatus;
   token?: string;
+  createdAt?: string;
 }
 
 export type MovieStatus = 'NOW_SHOWING' | 'COMING_SOON' | 'ENDED';

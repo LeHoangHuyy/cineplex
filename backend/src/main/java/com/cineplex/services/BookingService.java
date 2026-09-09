@@ -173,6 +173,13 @@ public class BookingService {
 
     @Transactional(readOnly = true)
     public com.cineplex.dtos.common.PageResponse<BookingResponse> getAllBookings(BookingStatus status, String search, org.springframework.data.domain.Pageable pageable) {
+        if (!pageable.getSort().isSorted()) {
+            pageable = org.springframework.data.domain.PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")
+            );
+        }
         String cleanSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         org.springframework.data.domain.Page<Booking> bookingPage = bookingRepository.searchBookings(status, cleanSearch, pageable);
         List<BookingResponse> content = bookingPage.getContent().stream()

@@ -7,6 +7,7 @@ import com.cineplex.services.MovieService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,8 +25,15 @@ public class MovieController {
             @RequestParam(required = false) MovieStatus status,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "15") int size) {
-        Pageable pageable = PageRequest.of(page, size);
+            @RequestParam(defaultValue = "15") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+        Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        String validSortBy = switch (sortBy) {
+            case "title", "releaseDate", "durationMinutes" -> sortBy;
+            default -> "createdAt";
+        };
+        Pageable pageable = PageRequest.of(page, size, Sort.by(dir, validSortBy));
         return ResponseEntity.ok(movieService.getAllMovies(status, search, pageable));
     }
 

@@ -23,4 +23,5 @@ public class AuthResponse {
     private String phone;
     private Role role;
     private UserStatus status;
+    private java.time.LocalDateTime createdAt;
 }

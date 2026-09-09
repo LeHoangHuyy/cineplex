@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Film, Plus, Edit2, Trash2, Search, X, Check, Eye, ChevronLeft, ChevronRight, Upload, ImageIcon } from 'lucide-react';
+import { Film, Plus, Edit2, Trash2, Search, X, Check, Eye, ChevronLeft, ChevronRight, Upload, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Movie, MovieStatus, AgeRating } from '../../types';
 import { adminApi, movieApi, uploadApi } from '../../api';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
@@ -11,11 +11,24 @@ const STATUS_FILTERS: { id: string; label: string }[] = [
   { id: 'ENDED', label: 'Ngừng Chiếu' },
 ];
 
+const SORT_OPTIONS = [
+  { label: 'Mới nhất', sortBy: 'createdAt', direction: 'desc' },
+  { label: 'Cũ nhất', sortBy: 'createdAt', direction: 'asc' },
+  { label: 'Tên (A-Z)', sortBy: 'title', direction: 'asc' },
+  { label: 'Tên (Z-A)', sortBy: 'title', direction: 'desc' },
+  { label: 'Thời lượng tăng dần', sortBy: 'durationMinutes', direction: 'asc' },
+  { label: 'Thời lượng giảm dần', sortBy: 'durationMinutes', direction: 'desc' },
+  { label: 'Khởi chiếu gần nhất', sortBy: 'releaseDate', direction: 'desc' },
+  { label: 'Khởi chiếu xa nhất', sortBy: 'releaseDate', direction: 'asc' },
+];
+
 export const MovieManagePage: React.FC = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
@@ -74,15 +87,17 @@ export const MovieManagePage: React.FC = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchMovies(currentPage, statusFilter, search);
+      fetchMovies(currentPage, statusFilter, search, sortBy, sortDir);
     }, 250);
     return () => clearTimeout(timer);
-  }, [currentPage, statusFilter, search]);
+  }, [currentPage, statusFilter, search, sortBy, sortDir]);
 
   const fetchMovies = async (
     page: number = currentPage,
     status: string = statusFilter,
-    query: string = search
+    query: string = search,
+    sort: string = sortBy,
+    dir: 'asc' | 'desc' = sortDir
   ) => {
     setLoading(true);
     try {
@@ -90,7 +105,9 @@ export const MovieManagePage: React.FC = () => {
         status === 'ALL' ? undefined : status,
         query.trim() ? query.trim() : undefined,
         page - 1,
-        ITEMS_PER_PAGE
+        ITEMS_PER_PAGE,
+        sort,
+        dir
       );
       setMovies(res.data.content || []);
       setTotalPages(res.data.totalPages || 1);
@@ -100,6 +117,27 @@ export const MovieManagePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(field);
+      setSortDir('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const renderSortIcon = (field: string) => {
+    if (sortBy !== field) {
+      return <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-60 group-hover:opacity-100" />;
+    }
+    return sortDir === 'asc' ? (
+      <ArrowUp className="w-3.5 h-3.5 text-emerald-600" />
+    ) : (
+      <ArrowDown className="w-3.5 h-3.5 text-emerald-600" />
+    );
   };
 
   const handleOpenAddModal = () => {
@@ -241,23 +279,46 @@ export const MovieManagePage: React.FC = () => {
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-2.5" />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-          {STATUS_FILTERS.map((st) => (
-            <button
-              key={st.id}
-              onClick={() => {
-                setStatusFilter(st.id);
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            {STATUS_FILTERS.map((st) => (
+              <button
+                key={st.id}
+                onClick={() => {
+                  setStatusFilter(st.id);
+                  setCurrentPage(1);
+                }}
+                className={`py-1.5 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 ${
+                  statusFilter === st.id
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                {st.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 border-t sm:border-t-0 sm:border-l border-slate-200 pt-2 sm:pt-0 sm:pl-3 w-full sm:w-auto">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Sắp xếp:</span>
+            <select
+              value={`${sortBy}-${sortDir}`}
+              onChange={(e) => {
+                const [field, dir] = e.target.value.split('-');
+                setSortBy(field);
+                setSortDir(dir as 'asc' | 'desc');
                 setCurrentPage(1);
               }}
-              className={`py-1.5 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 ${
-                statusFilter === st.id
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-              }`}
+              aria-label="Sắp xếp danh sách phim"
+              className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
             >
-              {st.label}
-            </button>
-          ))}
+              {SORT_OPTIONS.map((opt) => (
+                <option key={`${opt.sortBy}-${opt.direction}`} value={`${opt.sortBy}-${opt.direction}`}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -265,13 +326,37 @@ export const MovieManagePage: React.FC = () => {
       <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-100 text-slate-600 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200">
+            <thead className="bg-slate-100 text-slate-600 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200 select-none">
               <tr>
-                <th className="py-4 px-5">Phim</th>
+                <th className="py-4 px-5">
+                  <button
+                    onClick={() => handleSort('title')}
+                    className="group flex items-center gap-1.5 hover:text-emerald-600 transition font-bold"
+                  >
+                    <span>Phim</span>
+                    {renderSortIcon('title')}
+                  </button>
+                </th>
                 <th className="py-4 px-4">Độ Tuổi</th>
-                <th className="py-4 px-4">Thời Lượng</th>
+                <th className="py-4 px-4">
+                  <button
+                    onClick={() => handleSort('durationMinutes')}
+                    className="group flex items-center gap-1.5 hover:text-emerald-600 transition font-bold"
+                  >
+                    <span>Thời Lượng</span>
+                    {renderSortIcon('durationMinutes')}
+                  </button>
+                </th>
                 <th className="py-4 px-4">Trạng Thái</th>
-                <th className="py-4 px-4">Khởi Chiếu</th>
+                <th className="py-4 px-4">
+                  <button
+                    onClick={() => handleSort('releaseDate')}
+                    className="group flex items-center gap-1.5 hover:text-emerald-600 transition font-bold"
+                  >
+                    <span>Khởi Chiếu</span>
+                    {renderSortIcon('releaseDate')}
+                  </button>
+                </th>
                 <th className="py-4 px-5 text-right">Thao Tác</th>
               </tr>
             </thead>

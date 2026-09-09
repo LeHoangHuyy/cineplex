@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Lock, Unlock, Shield, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, Search, Lock, Unlock, Shield, UserCheck, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { User, UserStatus } from '../../types';
 import { adminApi } from '../../api';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
+
+const SORT_OPTIONS = [
+  { label: 'Mới nhất', sortBy: 'createdAt', direction: 'desc' },
+  { label: 'Cũ nhất', sortBy: 'createdAt', direction: 'asc' },
+  { label: 'Họ tên (A-Z)', sortBy: 'fullName', direction: 'asc' },
+  { label: 'Họ tên (Z-A)', sortBy: 'fullName', direction: 'desc' },
+  { label: 'Email (A-Z)', sortBy: 'email', direction: 'asc' },
+  { label: 'Email (Z-A)', sortBy: 'email', direction: 'desc' },
+];
 
 export const UserManagePage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
@@ -24,21 +35,25 @@ export const UserManagePage: React.FC = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchUsers(currentPage, search);
+      fetchUsers(currentPage, search, sortBy, sortDir);
     }, 250);
     return () => clearTimeout(timer);
-  }, [currentPage, search]);
+  }, [currentPage, search, sortBy, sortDir]);
 
   const fetchUsers = async (
     page: number = currentPage,
-    query: string = search
+    query: string = search,
+    sort: string = sortBy,
+    dir: 'asc' | 'desc' = sortDir
   ) => {
     setLoading(true);
     try {
       const res = await adminApi.getAllUsers(
         query.trim() ? query.trim() : undefined,
         page - 1,
-        ITEMS_PER_PAGE
+        ITEMS_PER_PAGE,
+        sort,
+        dir
       );
       setUsers(res.data.content || []);
       setTotalPages(res.data.totalPages || 1);
@@ -48,6 +63,27 @@ export const UserManagePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(field);
+      setSortDir(field === 'createdAt' ? 'desc' : 'asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const renderSortIcon = (field: string) => {
+    if (sortBy !== field) {
+      return <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-60 group-hover:opacity-100" />;
+    }
+    return sortDir === 'asc' ? (
+      <ArrowUp className="w-3.5 h-3.5 text-emerald-600" />
+    ) : (
+      <ArrowDown className="w-3.5 h-3.5 text-emerald-600" />
+    );
   };
 
   const handlePageChange = (newPage: number) => {
@@ -103,30 +139,70 @@ export const UserManagePage: React.FC = () => {
         </button>
       </div>
 
-      {/* Search Box */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
-        <Search className="w-4 h-4 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Tìm theo tên khách hàng, email hoặc số điện thoại..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setCurrentPage(1);
-          }}
-          className="w-full bg-transparent text-sm text-slate-800 placeholder-slate-400 focus:outline-none"
-        />
+      {/* Search & Sort Bar */}
+      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="relative w-full sm:w-96">
+          <input
+            type="text"
+            placeholder="Tìm theo tên khách hàng, email hoặc số điện thoại..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2 pl-4 pr-10 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+          />
+          <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-2.5" />
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+          <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Sắp xếp:</span>
+          <select
+            value={`${sortBy}-${sortDir}`}
+            onChange={(e) => {
+              const [field, dir] = e.target.value.split('-');
+              setSortBy(field);
+              setSortDir(dir as 'asc' | 'desc');
+              setCurrentPage(1);
+            }}
+            aria-label="Sắp xếp danh sách người dùng"
+            className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={`${opt.sortBy}-${opt.direction}`} value={`${opt.sortBy}-${opt.direction}`}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Users Table */}
       <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-100 text-slate-600 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200">
+            <thead className="bg-slate-100 text-slate-600 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200 select-none">
               <tr>
-                <th className="py-4 px-5">Người Dùng</th>
+                <th className="py-4 px-5">
+                  <button
+                    onClick={() => handleSort('fullName')}
+                    className="group flex items-center gap-1.5 hover:text-emerald-600 transition font-bold"
+                  >
+                    <span>Người Dùng</span>
+                    {renderSortIcon('fullName')}
+                  </button>
+                </th>
                 <th className="py-4 px-4">Số Điện Thoại</th>
                 <th className="py-4 px-4">Vai Trò</th>
+                <th className="py-4 px-4">
+                  <button
+                    onClick={() => handleSort('createdAt')}
+                    className="group flex items-center gap-1.5 hover:text-emerald-600 transition font-bold"
+                  >
+                    <span>Ngày Tham Gia</span>
+                    {renderSortIcon('createdAt')}
+                  </button>
+                </th>
                 <th className="py-4 px-4">Trạng Thái</th>
                 <th className="py-4 px-5 text-right">Khóa / Mở Khóa</th>
               </tr>
@@ -134,13 +210,13 @@ export const UserManagePage: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                  <td colSpan={6} className="py-12 text-center text-slate-400">
                     Đang tải danh sách tài khoản...
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                  <td colSpan={6} className="py-12 text-center text-slate-400">
                     Không tìm thấy người dùng nào.
                   </td>
                 </tr>
@@ -179,6 +255,9 @@ export const UserManagePage: React.FC = () => {
                         >
                           {isAdminRole ? '👑 QUẢN TRỊ VIÊN' : '🎟️ KHÁCH HÀNG'}
                         </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500 font-medium whitespace-nowrap">
+                        {u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '—'}
                       </td>
                       <td className="py-3.5 px-4">
                         <span

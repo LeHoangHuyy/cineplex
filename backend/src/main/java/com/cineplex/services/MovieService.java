@@ -28,6 +28,13 @@ public class MovieService {
 
     @Transactional(readOnly = true)
     public PageResponse<MovieResponse> getAllMovies(MovieStatus status, String search, Pageable pageable) {
+        if (!pageable.getSort().isSorted()) {
+            pageable = org.springframework.data.domain.PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")
+            );
+        }
         String cleanSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         Page<Movie> moviePage = movieRepository.searchMovies(status, cleanSearch, pageable);
         List<MovieResponse> content = moviePage.getContent().stream().map(this::mapToResponse).collect(Collectors.toList());

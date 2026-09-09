@@ -16,8 +16,8 @@ export const authApi = {
 };
 
 export const movieApi = {
-  getAll: (status?: string, search?: string, page?: number, size?: number) => 
-    api.get<PageResponse<Movie>>('/movies', { params: { status, search, page, size } }),
+  getAll: (status?: string, search?: string, page?: number, size?: number, sortBy?: string, direction?: string) => 
+    api.get<PageResponse<Movie>>('/movies', { params: { status, search, page, size, sortBy, direction } }),
   getById: (id: string) => 
     api.get<Movie>(`/movies/${id}`),
   getBySlug: (slug: string) => 
@@ -121,14 +121,14 @@ export const adminApi = {
     api.delete(`/admin/showtimes/${id}`),
 
   // Bookings
-  getAllBookings: (status?: string, search?: string, page?: number, size?: number) => 
-    api.get<PageResponse<Booking>>('/admin/bookings', { params: { status, search, page, size } }),
+  getAllBookings: (status?: string, search?: string, page?: number, size?: number, sortBy?: string, direction?: string) => 
+    api.get<PageResponse<Booking>>('/admin/bookings', { params: { status, search, page, size, sortBy, direction } }),
   getBookingDetail: (id: string) => 
     api.get<Booking>(`/admin/bookings/${id}`),
 
   // Users
-  getAllUsers: (search?: string, page?: number, size?: number) => 
-    api.get<PageResponse<User>>('/admin/users', { params: { search, page, size } }),
+  getAllUsers: (search?: string, page?: number, size?: number, sortBy?: string, direction?: string) => 
+    api.get<PageResponse<User>>('/admin/users', { params: { search, page, size, sortBy, direction } }),
   updateUserStatus: (id: string, status: 'ACTIVE' | 'LOCKED') => 
     api.patch<User>(`/admin/users/${id}/status`, { status }),
 };
