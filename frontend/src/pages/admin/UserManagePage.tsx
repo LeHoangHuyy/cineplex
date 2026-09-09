@@ -1,0 +1,249 @@
+import React, { useState, useEffect } from 'react';
+import { Users, Search, Lock, Unlock, Shield, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { User, UserStatus } from '../../types';
+import { adminApi } from '../../api';
+
+export const UserManagePage: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const ITEMS_PER_PAGE = 10;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchUsers(currentPage, search);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [currentPage, search]);
+
+  const fetchUsers = async (
+    page: number = currentPage,
+    query: string = search
+  ) => {
+    setLoading(true);
+    try {
+      const res = await adminApi.getAllUsers(
+        query.trim() ? query.trim() : undefined,
+        page - 1,
+        ITEMS_PER_PAGE
+      );
+      setUsers(res.data.content || []);
+      setTotalPages(res.data.totalPages || 1);
+      setTotalElements(res.data.totalElements || 0);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const handleToggleStatus = async (user: User) => {
+    const newStatus: UserStatus = user.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
+    const actionText = newStatus === 'LOCKED' ? 'KHÓA' : 'MỞ KHÓA';
+
+    if (window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản "${user.email}"?`)) {
+      try {
+        await adminApi.updateUserStatus(user.id, newStatus);
+        fetchUsers(currentPage, search);
+      } catch (err: any) {
+        alert(err.response?.data?.message || 'Không thể cập nhật trạng thái người dùng.');
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fadeIn text-slate-800">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+            <Users className="w-7 h-7 text-emerald-600" />
+            QUẢN LÝ NGƯỜI DÙNG
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Xem danh sách tài khoản khách hàng & quản trị viên, quản lý quyền hạn và khóa/mở tài khoản.
+          </p>
+        </div>
+
+        <button
+          onClick={() => fetchUsers(currentPage)}
+          className="py-2 px-4 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 transition shadow-sm self-start sm:self-auto"
+        >
+          Làm mới ⟳
+        </button>
+      </div>
+
+      {/* Search Box */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+        <Search className="w-4 h-4 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Tìm theo tên khách hàng, email hoặc số điện thoại..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="w-full bg-transparent text-sm text-slate-800 placeholder-slate-400 focus:outline-none"
+        />
+      </div>
+
+      {/* Users Table */}
+      <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-slate-700">
+            <thead className="bg-slate-100 text-slate-600 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200">
+              <tr>
+                <th className="py-4 px-5">Người Dùng</th>
+                <th className="py-4 px-4">Số Điện Thoại</th>
+                <th className="py-4 px-4">Vai Trò</th>
+                <th className="py-4 px-4">Trạng Thái</th>
+                <th className="py-4 px-5 text-right">Khóa / Mở Khóa</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                    Đang tải danh sách tài khoản...
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                    Không tìm thấy người dùng nào.
+                  </td>
+                </tr>
+              ) : (
+                users.map((u) => {
+                  const isAdminRole = u.role === 'ROLE_ADMIN';
+                  const isActive = u.status === 'ACTIVE';
+
+                  return (
+                    <tr key={u.id} className="hover:bg-slate-50 transition">
+                      <td className="py-3.5 px-5">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white shadow-sm ${
+                              isAdminRole ? 'bg-amber-600' : 'bg-emerald-600'
+                            }`}
+                          >
+                            {u.fullName.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 text-sm">{u.fullName}</p>
+                            <p className="text-[11px] text-slate-500">{u.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-slate-700">
+                        {u.phone || 'Chưa cập nhật'}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${
+                            isAdminRole
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
+                          }`}
+                        >
+                          {isAdminRole ? '👑 QUẢN TRỊ VIÊN' : '🎟️ KHÁCH HÀNG'}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${
+                            isActive
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          }`}
+                        >
+                          {isActive ? 'HOẠT ĐỘNG' : 'ĐÃ BỊ KHÓA'}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-5 text-right">
+                        {!isAdminRole && (
+                          <button
+                            onClick={() => handleToggleStatus(u)}
+                            className={`py-1.5 px-3 rounded-xl font-bold text-xs transition flex items-center gap-1 ml-auto shadow-sm ${
+                              isActive
+                                ? 'bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100'
+                                : 'bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                            }`}
+                          >
+                            {isActive ? (
+                              <>
+                                <Lock className="w-3.5 h-3.5" />
+                                Khóa Tài Khoản
+                              </>
+                            ) : (
+                              <>
+                                <Unlock className="w-3.5 h-3.5" />
+                                Mở Khóa
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Bar */}
+        <div className="py-3 px-6 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <p>
+            Hiển thị <span className="font-bold text-slate-800">{users.length}</span> /{' '}
+            <span className="font-bold text-slate-800">{totalElements}</span> người dùng
+          </p>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white transition shadow-sm"
+                title="Trang trước"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`w-7 h-7 rounded-lg text-xs font-bold transition ${
+                    currentPage === pageNum
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+
+              <button
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white transition shadow-sm"
+                title="Trang sau"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};

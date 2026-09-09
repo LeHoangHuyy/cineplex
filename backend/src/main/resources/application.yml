@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: cineplex-backend
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/cineplex_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgrespassword}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: 60000
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+app:
+  jwt:
+    secret: 9a6747f3b64f4d228f41334c979d51d4512e2f38f4d9241b3a1a6b0c2e3f4a5b
+    expiration-ms: 86400000 # 24 hours
+  booking:
+    seat-hold-duration-seconds: 300 # 5 minutes
+    cleaning-buffer-minutes: 15

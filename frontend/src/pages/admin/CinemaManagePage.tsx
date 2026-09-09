@@ -1,0 +1,606 @@
+import React, { useState, useEffect } from 'react';
+import { Film, Plus, Edit2, Trash2, MapPin, Grid, X, Save, Heart, Sparkles, Check } from 'lucide-react';
+import { Cinema, Room, RoomType, Seat, SeatType } from '../../types';
+import { adminApi, cinemaApi } from '../../api';
+
+export const CinemaManagePage: React.FC = () => {
+  const [cinemas, setCinemas] = useState<Cinema[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Cinema Modal
+  const [isCinemaModalOpen, setIsCinemaModalOpen] = useState(false);
+  const [editingCinema, setEditingCinema] = useState<Cinema | null>(null);
+  const [cinemaName, setCinemaName] = useState('');
+  const [cinemaAddress, setCinemaAddress] = useState('');
+  const [cinemaCity, setCinemaCity] = useState('');
+  const [cinemaPhone, setCinemaPhone] = useState('');
+  const [cinemaImage, setCinemaImage] = useState('');
+
+  // Room Modal
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+  const [selectedCinemaForRoom, setSelectedCinemaForRoom] = useState<Cinema | null>(null);
+  const [roomName, setRoomName] = useState('');
+  const [roomRows, setRoomRows] = useState(8);
+  const [roomCols, setRoomCols] = useState(12);
+  const [roomType, setRoomType] = useState<RoomType>('STANDARD_2D');
+
+  // Seat Layout Modal
+  const [isSeatModalOpen, setIsSeatModalOpen] = useState(false);
+  const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
+  const [roomSeats, setRoomSeats] = useState<Seat[]>([]);
+  const [selectedSeatTypeToBrush, setSelectedSeatTypeToBrush] = useState<SeatType>('VIP');
+  const [savingSeats, setSavingSeats] = useState(false);
+
+  useEffect(() => {
+    fetchCinemas();
+  }, []);
+
+  const fetchCinemas = async () => {
+    setLoading(true);
+    try {
+      const res = await cinemaApi.getAll();
+      setCinemas(res.data);
+    } catch (err) {
+      console.error('Error fetching cinemas:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenAddCinema = () => {
+    setEditingCinema(null);
+    setCinemaName('');
+    setCinemaAddress('');
+    setCinemaCity('Hà Nội');
+    setCinemaPhone('');
+    setCinemaImage('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80');
+    setIsCinemaModalOpen(true);
+  };
+
+  const handleOpenEditCinema = (c: Cinema) => {
+    setEditingCinema(c);
+    setCinemaName(c.name);
+    setCinemaAddress(c.address);
+    setCinemaCity(c.city);
+    setCinemaPhone(c.phone || '');
+    setCinemaImage(c.imageUrl || '');
+    setIsCinemaModalOpen(true);
+  };
+
+  const handleSaveCinema = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      name: cinemaName,
+      address: cinemaAddress,
+      city: cinemaCity,
+      phone: cinemaPhone,
+      imageUrl: cinemaImage,
+    };
+    try {
+      if (editingCinema) {
+        await adminApi.updateCinema(editingCinema.id, payload);
+      } else {
+        await adminApi.createCinema(payload);
+      }
+      setIsCinemaModalOpen(false);
+      fetchCinemas();
+    } catch (err) {
+      console.error('Error saving cinema:', err);
+    }
+  };
+
+  const handleDeleteCinema = async (id: string, name: string) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa rạp "${name}" và toàn bộ phòng chiếu liên quan?`)) {
+      try {
+        await adminApi.deleteCinema(id);
+        fetchCinemas();
+      } catch (err) {
+        console.error('Error deleting cinema:', err);
+      }
+    }
+  };
+
+  const handleOpenAddRoom = (c: Cinema) => {
+    setSelectedCinemaForRoom(c);
+    setRoomName(`Phòng Chiếu 0${(c.rooms?.length || 0) + 1}`);
+    setRoomRows(8);
+    setRoomCols(12);
+    setRoomType('STANDARD_2D');
+    setIsRoomModalOpen(true);
+  };
+
+  const handleSaveRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCinemaForRoom) return;
+    try {
+      await adminApi.createRoom({
+        cinemaId: selectedCinemaForRoom.id,
+        name: roomName,
+        totalRows: Number(roomRows),
+        totalCols: Number(roomCols),
+        roomType,
+      });
+      setIsRoomModalOpen(false);
+      fetchCinemas();
+    } catch (err) {
+      console.error('Error saving room:', err);
+    }
+  };
+
+  const handleDeleteRoom = async (roomId: string, rName: string) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa phòng "${rName}"?`)) {
+      try {
+        await adminApi.deleteRoom(roomId);
+        fetchCinemas();
+      } catch (err) {
+        console.error('Error deleting room:', err);
+      }
+    }
+  };
+
+  // Seat Layout Builder
+  const handleOpenSeatBuilder = async (r: Room) => {
+    setCurrentRoom(r);
+    setIsSeatModalOpen(true);
+    try {
+      const res = await adminApi.getRoomSeats(r.id);
+      setRoomSeats(res.data);
+    } catch (err) {
+      console.error('Error fetching room seats:', err);
+    }
+  };
+
+  const handleToggleSeatTypeInBuilder = (index: number) => {
+    const updated = [...roomSeats];
+    const seat = updated[index];
+    seat.seatType = selectedSeatTypeToBrush;
+    setRoomSeats(updated);
+  };
+
+  const handleSaveSeatLayout = async () => {
+    if (!currentRoom) return;
+    setSavingSeats(true);
+    try {
+      await adminApi.updateRoomSeats({
+        roomId: currentRoom.id,
+        seats: roomSeats,
+      });
+      setIsSeatModalOpen(false);
+      alert('Đã cập nhật sơ đồ ghế phòng chiếu thành công!');
+    } catch (err) {
+      console.error('Error saving seat layout:', err);
+      alert('Lỗi lưu sơ đồ ghế.');
+    } finally {
+      setSavingSeats(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fadeIn text-slate-800">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+            <Film className="w-7 h-7 text-emerald-600" />
+            QUẢN LÝ RẠP & PHÒNG CHIẾU
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Quản lý cụm rạp toàn quốc, thêm phòng chiếu chuẩn IMAX/4DX và cấu hình sơ đồ ghế trực quan.
+          </p>
+        </div>
+
+        <button
+          onClick={handleOpenAddCinema}
+          className="py-3 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Thêm Cụm Rạp Mới</span>
+        </button>
+      </div>
+
+      {/* Cinema Cards List */}
+      <div className="space-y-6">
+        {loading ? (
+          <div className="py-12 text-center text-slate-400">Đang tải danh sách rạp...</div>
+        ) : cinemas.length === 0 ? (
+          <div className="py-12 text-center text-slate-500 bg-white rounded-3xl border border-slate-200 shadow-sm">
+            Chưa có cụm rạp nào. Nhấn "Thêm Cụm Rạp Mới" để bắt đầu.
+          </div>
+        ) : (
+          cinemas.map((cinema) => (
+            <div
+              key={cinema.id}
+              className="bg-white rounded-3xl border border-slate-200 p-6 space-y-5 shadow-sm"
+            >
+              {/* Cinema Branch Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-sm">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-lg text-slate-900">{cinema.name}</h3>
+                    <p className="text-xs text-slate-500">{cinema.address} • {cinema.city}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleOpenAddRoom(cinema)}
+                    className="py-2 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-emerald-700 font-bold text-xs flex items-center gap-1.5 transition border border-slate-200 shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Thêm Phòng Chiếu
+                  </button>
+                  <button
+                    onClick={() => handleOpenEditCinema(cinema)}
+                    className="p-2 rounded-xl bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-600 transition shadow-sm border border-slate-200"
+                    title="Sửa rạp"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCinema(cinema.id, cinema.name)}
+                    className="p-2 rounded-xl bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-600 transition shadow-sm border border-slate-200"
+                    title="Xóa rạp"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Rooms List */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+                  Phòng Chiếu ({cinema.rooms?.length || 0} phòng)
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {cinema.rooms?.map((room) => (
+                    <div
+                      key={room.id}
+                      className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition flex items-center justify-between gap-3 shadow-sm"
+                    >
+                      <div className="space-y-1">
+                        <span className="font-bold text-sm text-slate-900 block">{room.name}</span>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                          <span className="text-emerald-600 font-bold">{room.roomType}</span>
+                          <span>•</span>
+                          <span>{room.totalSeats || room.totalRows * room.totalCols} ghế ({room.totalRows}x{room.totalCols})</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleOpenSeatBuilder(room)}
+                          className="p-2 rounded-xl bg-white hover:bg-emerald-600 hover:text-white text-slate-600 transition shadow-sm border border-slate-200"
+                          title="Cấu hình sơ đồ ghế"
+                        >
+                          <Grid className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRoom(room.id, room.name)}
+                          className="p-2 rounded-xl bg-white hover:bg-rose-600 hover:text-white text-slate-600 transition shadow-sm border border-slate-200"
+                          title="Xóa phòng"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Cinema Modal */}
+      {isCinemaModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-md bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 sm:p-8 text-slate-800">
+            <button
+              onClick={() => setIsCinemaModalOpen(false)}
+              className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-black text-slate-900 mb-5">
+              {editingCinema ? 'SỬA THÔNG TIN RẠP' : 'THÊM CỤM RẠP MỚI'}
+            </h3>
+
+            <form onSubmit={handleSaveCinema} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Tên Cụm Rạp *</label>
+                <input
+                  type="text"
+                  required
+                  value={cinemaName}
+                  onChange={(e) => setCinemaName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Địa Chỉ *</label>
+                <input
+                  type="text"
+                  required
+                  value={cinemaAddress}
+                  onChange={(e) => setCinemaAddress(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Tỉnh / Thành Phố *</label>
+                  <input
+                    type="text"
+                    required
+                    value={cinemaCity}
+                    onChange={(e) => setCinemaCity(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Số Điện Thoại</label>
+                  <input
+                    type="text"
+                    value={cinemaPhone}
+                    onChange={(e) => setCinemaPhone(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Hình Ảnh Rạp (URL)</label>
+                <input
+                  type="url"
+                  value={cinemaImage}
+                  onChange={(e) => setCinemaImage(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCinemaModalOpen(false)}
+                  className="py-2 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-200"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="py-2 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow-lg shadow-emerald-600/30"
+                >
+                  Lưu Rạp
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Room Modal */}
+      {isRoomModalOpen && selectedCinemaForRoom && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-md bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 sm:p-8 text-slate-800">
+            <button
+              onClick={() => setIsRoomModalOpen(false)}
+              className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-black text-slate-900 mb-2">THÊM PHÒNG CHIẾU</h3>
+            <p className="text-xs text-slate-500 mb-5">Rạp: {selectedCinemaForRoom.name}</p>
+
+            <form onSubmit={handleSaveRoom} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Tên Phòng Chiếu *</label>
+                <input
+                  type="text"
+                  required
+                  value={roomName}
+                  onChange={(e) => setRoomName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Loại Phòng Chiếu *</label>
+                <select
+                  value={roomType}
+                  onChange={(e) => setRoomType(e.target.value as RoomType)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
+                >
+                  <option value="STANDARD_2D">STANDARD 2D Digital</option>
+                  <option value="IMAX_3D">IMAX 3D Laser</option>
+                  <option value="FOUR_DX">4DX Chuyển Động</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Số Hàng Ghế (Rows)</label>
+                  <input
+                    type="number"
+                    min={4}
+                    max={15}
+                    value={roomRows}
+                    onChange={(e) => setRoomRows(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Số Cột Ghế (Cols)</label>
+                  <input
+                    type="number"
+                    min={6}
+                    max={20}
+                    value={roomCols}
+                    onChange={(e) => setRoomCols(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsRoomModalOpen(false)}
+                  className="py-2 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-200"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="py-2 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow-lg shadow-emerald-600/30"
+                >
+                  Tạo Phòng
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Seat Layout Configurator Modal */}
+      {isSeatModalOpen && currentRoom && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-4xl bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 sm:p-8 text-slate-800 max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setIsSeatModalOpen(false)}
+              className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-xl font-black text-slate-900 mb-1">
+              CẤU HÌNH SƠ ĐỒ GHẾ: {currentRoom.name}
+            </h3>
+            <p className="text-xs text-slate-500 mb-6">
+              Chọn công cụ loại ghế bên dưới, sau đó click vào từng ghế trên sơ đồ để gán loại ghế.
+            </p>
+
+            {/* Brush Tool Selector */}
+            <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200 mb-8 max-w-md">
+              <span className="text-xs font-bold text-slate-500 pl-2">Chọn cọ gán:</span>
+              <button
+                type="button"
+                onClick={() => setSelectedSeatTypeToBrush('REGULAR')}
+                className={`py-1.5 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+                  selectedSeatTypeToBrush === 'REGULAR'
+                    ? 'bg-slate-800 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Ghế Thường (1x)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedSeatTypeToBrush('VIP')}
+                className={`py-1.5 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+                  selectedSeatTypeToBrush === 'VIP'
+                    ? 'bg-amber-600 text-white shadow-sm'
+                    : 'text-amber-700 hover:text-amber-900'
+                }`}
+              >
+                <Sparkles className="w-3 h-3" />
+                Ghế VIP (1.2x)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedSeatTypeToBrush('COUPLE')}
+                className={`py-1.5 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+                  selectedSeatTypeToBrush === 'COUPLE'
+                    ? 'bg-rose-600 text-white shadow-sm'
+                    : 'text-rose-700 hover:text-rose-900'
+                }`}
+              >
+                <Heart className="w-3 h-3" />
+                Ghế Đôi (1.8x)
+              </button>
+            </div>
+
+            {/* Seat Matrix */}
+            <div className="overflow-x-auto pb-6">
+              <div className="min-w-[500px] flex flex-col items-center gap-2.5">
+                {/* Screen Header */}
+                <div className="w-full max-w-md h-2 bg-gradient-to-r from-transparent via-emerald-500 to-transparent rounded-full shadow-[0_0_15px_rgba(16,185,129,0.8)] mb-6 text-center">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block -mt-4">
+                    Màn Hình
+                  </span>
+                </div>
+
+                {/* Render Seats */}
+                {roomSeats.length === 0 ? (
+                  <p className="text-slate-400 text-xs py-8">Đang tải sơ đồ ghế...</p>
+                ) : (
+                  <div className="space-y-2">
+                    {Array.from(new Set(roomSeats.map((s) => s.seatRow))).map((rowLetter) => (
+                      <div key={rowLetter} className="flex items-center gap-2">
+                        <span className="w-6 text-center font-bold text-xs text-slate-400">
+                          {rowLetter}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {roomSeats
+                            .map((seat, index) => ({ seat, index }))
+                            .filter(({ seat }) => seat.seatRow === rowLetter)
+                            .map(({ seat, index }) => {
+                              const isVIP = seat.seatType === 'VIP';
+                              const isCouple = seat.seatType === 'COUPLE';
+
+                              return (
+                                <button
+                                  key={seat.id || index}
+                                  type="button"
+                                  onClick={() => handleToggleSeatTypeInBuilder(index)}
+                                  className={`w-8 h-8 rounded-lg border text-[11px] font-bold transition hover:scale-110 flex items-center justify-center shadow-sm ${
+                                    isVIP
+                                      ? 'bg-amber-50 border-amber-300 text-amber-800'
+                                      : isCouple
+                                      ? 'bg-rose-50 border-rose-300 text-rose-800'
+                                      : 'bg-white border-slate-300 text-slate-700'
+                                  }`}
+                                  title={`${seat.seatCode} (${seat.seatType})`}
+                                >
+                                  {isCouple ? '❤️' : seat.seatNumber}
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-6 flex justify-end gap-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsSeatModalOpen(false)}
+                className="py-2 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={savingSeats}
+                onClick={handleSaveSeatLayout}
+                className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center gap-1.5"
+              >
+                <Save className="w-4 h-4" />
+                {savingSeats ? 'Đang lưu...' : 'LƯU SƠ ĐỒ GHẾ'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
