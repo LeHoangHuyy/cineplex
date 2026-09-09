@@ -94,14 +94,16 @@ export const Navbar: React.FC = () => {
               <Ticket className="w-3.5 h-3.5 text-emerald-600" />
               Vé Của Tôi
             </Link>
-            <Link
-              to="/verify-ticket"
-              className={`text-xs sm:text-sm font-bold transition-colors hover:text-emerald-600 ${
-                isActive('/verify-ticket') ? 'text-emerald-600' : 'text-slate-600'
-              }`}
-            >
-              Kiểm Tra Vé
-            </Link>
+            {isAdmin && (
+              <Link
+                to="/verify-ticket"
+                className={`text-xs sm:text-sm font-bold transition-colors hover:text-emerald-600 ${
+                  isActive('/verify-ticket') ? 'text-emerald-600' : 'text-slate-600'
+                }`}
+              >
+                Kiểm Tra Vé
+              </Link>
+            )}
           </nav>
 
           {/* User Auth Section */}
@@ -207,13 +209,15 @@ export const Navbar: React.FC = () => {
           >
             Vé Của Tôi
           </Link>
-          <Link
-            to="/verify-ticket"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md text-base font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-600"
-          >
-            Kiểm Tra Vé
-          </Link>
+          {isAdmin && (
+            <Link
+              to="/verify-ticket"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-md text-base font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-600"
+            >
+              Kiểm Tra Vé
+            </Link>
+          )}
 
           {isAdmin && (
             <Link

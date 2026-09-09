@@ -1,12 +1,55 @@
 import React, { useState } from 'react';
-import { QrCode, Search, CheckCircle2, XCircle, Film, MapPin, Calendar, Clock, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { QrCode, Search, CheckCircle2, XCircle, ShieldAlert, LogIn, ArrowLeft } from 'lucide-react';
 import { ticketApi } from '../../api';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const VerifyTicketPage: React.FC = () => {
+  const { user, isAdmin, openAuthModal } = useAuth();
   const [ticketCode, setTicketCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // If not logged in or not Admin, do not display the ticket verification feature
+  if (!user || !isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-800 py-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-slate-200 shadow-xl text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-sm">
+            <ShieldAlert className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl font-black text-slate-900">
+            {!user ? 'YÊU CẦU ĐĂNG NHẬP' : 'KHÔNG CÓ QUYỀN TRUY CẬP'}
+          </h2>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            {!user
+              ? 'Chức năng Kiểm tra & Soát vé điện tử chỉ dành riêng cho Quản trị viên (Admin) và Nhân viên rạp. Vui lòng đăng nhập với tài khoản có quyền quản trị để tiếp tục.'
+              : 'Chức năng Kiểm tra & Soát vé điện tử chỉ dành cho Quản trị viên (Admin) và Nhân viên rạp. Tài khoản của bạn hiện là Khách Hàng nên không có quyền sử dụng chức năng này.'}
+          </p>
+          <div className="pt-2 flex items-center justify-center gap-3">
+            <Link
+              to="/"
+              className="py-2.5 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center gap-1.5"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Về Trang Chủ</span>
+            </Link>
+            {!user && (
+              <button
+                type="button"
+                onClick={() => openAuthModal('login')}
+                className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/30 transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Đăng Nhập</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +80,7 @@ export const VerifyTicketPage: React.FC = () => {
             KIỂM TRA & SOÁT VÉ ĐIỆN TỬ
           </h1>
           <p className="text-xs text-slate-500">
-            Dành cho nhân viên rạp soát vé hoặc khách hàng tra cứu tính hợp lệ của mã vé.
+            Dành riêng cho Quản trị viên và Nhân viên rạp soát vé điện tử.
           </p>
         </div>
 
