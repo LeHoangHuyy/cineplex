@@ -252,7 +252,7 @@ export const BookingPage: React.FC = () => {
             </div>
 
             {/* Right 1 Col: Booking Summary & Action */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6 sticky top-28 text-slate-800">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6 text-slate-800">
               <h3 className="font-black text-lg text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
                 <Ticket className="w-5 h-5 text-emerald-600" />
                 THÔNG TIN ĐẶT VÉ

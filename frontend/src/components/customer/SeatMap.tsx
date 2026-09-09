@@ -35,7 +35,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
     }
 
     if (seat.status === 'HOLDING' && !seat.isHeldByCurrentUser && !isSelected) {
-      return 'bg-amber-100 border-amber-400 text-amber-800 animate-pulse cursor-not-allowed';
+      return 'bg-purple-100 border-purple-400 text-purple-800 animate-pulse cursor-not-allowed';
     }
 
     if (isSelected) {
@@ -45,7 +45,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
     // Seat Types
     switch (seat.seatType) {
       case 'VIP':
-        return 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 hover:border-amber-400 shadow-sm';
+        return 'bg-amber-50 border-amber-400 text-amber-900 font-semibold hover:bg-amber-100 hover:border-amber-500 shadow-sm';
       case 'COUPLE':
         return 'bg-rose-50 border-rose-300 text-rose-800 hover:bg-rose-100 hover:border-rose-400 shadow-sm';
       default:
@@ -117,8 +117,8 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                         )}
 
                         {/* VIP Sparkle indicator */}
-                        {seat.seatType === 'VIP' && !isSelected && !isBooked && (
-                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full" />
+                        {seat.seatType === 'VIP' && !isSelected && !isBooked && !isHolding && (
+                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full ring-1 ring-white" />
                         )}
                       </button>
                     );
@@ -143,10 +143,10 @@ export const SeatMap: React.FC<SeatMapProps> = ({
             <span className="text-slate-600 text-[11px]">Ghế Thường</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded border border-amber-300 bg-amber-50 relative shadow-sm">
-              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-amber-500 rounded-full" />
+            <div className="w-5 h-5 rounded border border-amber-400 bg-amber-50 relative shadow-sm">
+              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-amber-500 rounded-full ring-1 ring-white" />
             </div>
-            <span className="text-amber-800 text-[11px] font-bold">Ghế VIP</span>
+            <span className="text-amber-900 text-[11px] font-bold">Ghế VIP</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-8 h-5 rounded border border-rose-300 bg-rose-50 flex items-center justify-center shadow-sm">
@@ -161,8 +161,8 @@ export const SeatMap: React.FC<SeatMapProps> = ({
             <span className="text-emerald-700 text-[11px] font-bold">Đang Chọn</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded border border-amber-400 bg-amber-100 animate-pulse" />
-            <span className="text-amber-800 text-[11px] font-semibold">Đang Giữ Chỗ</span>
+            <div className="w-5 h-5 rounded border border-purple-400 bg-purple-100 animate-pulse" />
+            <span className="text-purple-800 text-[11px] font-semibold">Đang Giữ Chỗ</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded border border-slate-200 bg-slate-200 flex items-center justify-center">
