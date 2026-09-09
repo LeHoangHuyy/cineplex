@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Film, Plus, Edit2, Trash2, Search, X, Check, Eye, ChevronLeft, ChevronRight, Upload, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Film, Plus, Edit2, Trash2, Search, X, Check, Eye, ChevronLeft, ChevronRight, Upload, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, Filter } from 'lucide-react';
 import { Movie, MovieStatus, AgeRating } from '../../types';
 import { adminApi, movieApi, uploadApi } from '../../api';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
+import { AdminDropdown } from '../../components/common/AdminDropdown';
 
 const STATUS_FILTERS: { id: string; label: string }[] = [
   { id: 'ALL', label: 'Tất Cả' },
@@ -279,46 +280,30 @@ export const MovieManagePage: React.FC = () => {
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-2.5" />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Trạng thái:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              aria-label="Lọc theo trạng thái phim"
-              className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
-            >
-              {STATUS_FILTERS.map((st) => (
-                <option key={st.id} value={st.id}>
-                  {st.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <AdminDropdown
+            label="Trạng thái"
+            icon={<Filter className="w-3.5 h-3.5 text-emerald-600" />}
+            value={statusFilter}
+            onChange={(val) => {
+              setStatusFilter(val);
+              setCurrentPage(1);
+            }}
+            options={STATUS_FILTERS.map((st) => ({ value: st.id, label: st.label }))}
+          />
 
-          <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
-            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Sắp xếp:</span>
-            <select
-              value={`${sortBy}-${sortDir}`}
-              onChange={(e) => {
-                const [field, dir] = e.target.value.split('-');
-                setSortBy(field);
-                setSortDir(dir as 'asc' | 'desc');
-                setCurrentPage(1);
-              }}
-              aria-label="Sắp xếp danh sách phim"
-              className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={`${opt.sortBy}-${opt.direction}`} value={`${opt.sortBy}-${opt.direction}`}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <AdminDropdown
+            label="Sắp xếp"
+            icon={<ArrowUpDown className="w-3.5 h-3.5 text-emerald-600" />}
+            value={`${sortBy}-${sortDir}`}
+            onChange={(val) => {
+              const [field, dir] = val.split('-');
+              setSortBy(field);
+              setSortDir(dir as 'asc' | 'desc');
+              setCurrentPage(1);
+            }}
+            options={SORT_OPTIONS.map((opt) => ({ value: `${opt.sortBy}-${opt.direction}`, label: opt.label }))}
+          />
         </div>
       </div>
 
