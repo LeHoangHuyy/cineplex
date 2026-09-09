@@ -7,8 +7,8 @@ import { AdminDropdown } from '../../components/common/AdminDropdown';
 
 const STATUS_FILTERS: { id: string; label: string }[] = [
   { id: 'ALL', label: 'Tất Cả' },
-  { id: 'NOW_SHOWING', label: 'Đang Chiếu' },
   { id: 'COMING_SOON', label: 'Sắp Chiếu' },
+  { id: 'NOW_SHOWING', label: 'Đang Chiếu' },
   { id: 'ENDED', label: 'Ngừng Chiếu' },
 ];
 
@@ -61,11 +61,13 @@ export const MovieManagePage: React.FC = () => {
   const [ageRating, setAgeRating] = useState<AgeRating>('P');
   const [releaseDate, setReleaseDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState('');
-  const [status, setStatus] = useState<MovieStatus>('NOW_SHOWING');
+  const [status, setStatus] = useState<MovieStatus>('COMING_SOON');
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingPoster, setUploadingPoster] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const posterFileInputRef = useRef<HTMLInputElement>(null);
+  const bannerFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadPoster = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,12 +78,31 @@ export const MovieManagePage: React.FC = () => {
       const res = await uploadApi.uploadImage(file);
       setPosterUrl(res.data.url);
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'Không thể upload ảnh lên MinIO.';
+      const msg = err.response?.data?.message || err.message || 'Không thể upload poster lên MinIO.';
       setFormError(msg);
     } finally {
       setUploadingPoster(false);
       if (posterFileInputRef.current) {
         posterFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleUploadBanner = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingBanner(true);
+    setFormError(null);
+    try {
+      const res = await uploadApi.uploadImage(file);
+      setBannerUrl(res.data.url);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'Không thể upload banner lên MinIO.';
+      setFormError(msg);
+    } finally {
+      setUploadingBanner(false);
+      if (bannerFileInputRef.current) {
+        bannerFileInputRef.current.value = '';
       }
     }
   };
@@ -149,13 +170,13 @@ export const MovieManagePage: React.FC = () => {
     setGenre('Hành Động, Viễn Tưởng');
     setDirector('');
     setCastMembers('');
-    setPosterUrl('https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=500&q=80');
+    setPosterUrl('');
     setBannerUrl('');
-    setTrailerUrl('https://www.youtube.com/watch?v=Way9Dexny3w');
-    setAgeRating('T16');
+    setTrailerUrl('');
+    setAgeRating('P');
     setReleaseDate(new Date().toISOString().split('T')[0]);
     setEndDate('');
-    setStatus('NOW_SHOWING');
+    setStatus('COMING_SOON');
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -182,6 +203,12 @@ export const MovieManagePage: React.FC = () => {
   const handleSaveMovie = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
+
+    if (!posterUrl) {
+      setFormError('Vui lòng tải lên ảnh Poster cho phim.');
+      return;
+    }
+
     setSaving(true);
 
     const payload = {
@@ -547,10 +574,10 @@ export const MovieManagePage: React.FC = () => {
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as MovieStatus)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium cursor-pointer"
                   >
-                    <option value="NOW_SHOWING">Đang Chiếu (Now Showing)</option>
                     <option value="COMING_SOON">Sắp Chiếu (Coming Soon)</option>
+                    <option value="NOW_SHOWING">Đang Chiếu (Now Showing)</option>
                     <option value="ENDED">Ngừng Chiếu (Ended)</option>
                   </select>
                 </div>
@@ -596,9 +623,26 @@ export const MovieManagePage: React.FC = () => {
                   />
                 </div>
 
-                <div className="sm:col-span-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block font-bold text-slate-700">Poster Phim (Ảnh dọc) *</label>
+                {/* Media Upload Section: Poster & Banner */}
+                <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  {/* Poster Upload (Ảnh dọc) */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block font-bold text-slate-700 text-xs">
+                        Poster Phim (Ảnh dọc) *
+                      </label>
+                      {posterUrl && (
+                        <button
+                          type="button"
+                          disabled={uploadingPoster}
+                          onClick={() => posterFileInputRef.current?.click()}
+                          className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition cursor-pointer"
+                        >
+                          Đổi poster
+                        </button>
+                      )}
+                    </div>
+
                     <input
                       type="file"
                       ref={posterFileInputRef}
@@ -606,36 +650,125 @@ export const MovieManagePage: React.FC = () => {
                       accept="image/png,image/jpeg,image/webp,image/gif"
                       className="hidden"
                     />
-                    <button
-                      type="button"
-                      disabled={uploadingPoster}
-                      onClick={() => posterFileInputRef.current?.click()}
-                      className="py-1 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition flex items-center gap-1.5 border border-emerald-200 cursor-pointer disabled:opacity-50"
-                    >
-                      <Upload className={`w-3.5 h-3.5 ${uploadingPoster ? 'animate-bounce' : ''}`} />
-                      <span>{uploadingPoster ? 'Đang tải lên MinIO...' : 'Tải ảnh từ máy (MinIO)'}</span>
-                    </button>
-                  </div>
-                  <div className="flex gap-3 items-start">
-                    <input
-                      type="url"
-                      required
-                      placeholder="https://... hoặc bấm nút tải ảnh từ máy lên MinIO"
-                      value={posterUrl}
-                      onChange={(e) => setPosterUrl(e.target.value)}
-                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium text-xs"
-                    />
-                    {posterUrl && (
-                      <div className="relative group shrink-0">
+
+                    {posterUrl ? (
+                      <div className="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 h-52 flex items-center justify-center shadow-xs">
                         <img
                           src={posterUrl}
                           alt="Poster preview"
-                          className="w-12 h-16 object-cover rounded-lg border border-slate-200 shadow-sm"
+                          className="w-full h-full object-contain"
                           onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400';
+                            (e.currentTarget as HTMLImageElement).src =
+                              'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400';
                           }}
                         />
+                        <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            disabled={uploadingPoster}
+                            onClick={() => posterFileInputRef.current?.click()}
+                            className="px-3.5 py-2 rounded-xl bg-white text-slate-800 text-xs font-bold shadow-md hover:bg-slate-100 flex items-center gap-1.5 transition"
+                          >
+                            <Upload className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>{uploadingPoster ? 'Đang tải...' : 'Tải ảnh khác từ máy (MinIO)'}</span>
+                          </button>
+                        </div>
                       </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={uploadingPoster}
+                        onClick={() => posterFileInputRef.current?.click()}
+                        className="w-full h-52 border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50/20 transition cursor-pointer disabled:opacity-50"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-xs text-emerald-600">
+                          <Upload className={`w-5 h-5 ${uploadingPoster ? 'animate-bounce' : ''}`} />
+                        </div>
+                        <div className="text-center px-4">
+                          <p className="font-bold text-xs">
+                            {uploadingPoster ? 'Đang tải lên MinIO...' : 'Tải Poster Phim (MinIO)'}
+                          </p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">Khuyên dùng tỷ lệ 2:3 hoặc 3:4 (ảnh dọc)</p>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Banner Upload (Ảnh ngang) */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block font-bold text-slate-700 text-xs">
+                        Banner Phim (Ảnh ngang)
+                      </label>
+                      {bannerUrl && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={uploadingBanner}
+                            onClick={() => bannerFileInputRef.current?.click()}
+                            className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition cursor-pointer"
+                          >
+                            Đổi banner
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setBannerUrl('')}
+                            className="text-[11px] font-bold text-rose-500 hover:text-rose-600 transition cursor-pointer"
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <input
+                      type="file"
+                      ref={bannerFileInputRef}
+                      onChange={handleUploadBanner}
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      className="hidden"
+                    />
+
+                    {bannerUrl ? (
+                      <div className="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 h-52 flex items-center justify-center shadow-xs">
+                        <img
+                          src={bannerUrl}
+                          alt="Banner preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1200';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            disabled={uploadingBanner}
+                            onClick={() => bannerFileInputRef.current?.click()}
+                            className="px-3.5 py-2 rounded-xl bg-white text-slate-800 text-xs font-bold shadow-md hover:bg-slate-100 flex items-center gap-1.5 transition"
+                          >
+                            <Upload className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>{uploadingBanner ? 'Đang tải...' : 'Tải ảnh khác từ máy (MinIO)'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={uploadingBanner}
+                        onClick={() => bannerFileInputRef.current?.click()}
+                        className="w-full h-52 border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50/20 transition cursor-pointer disabled:opacity-50"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-xs text-emerald-600">
+                          <ImageIcon className={`w-5 h-5 ${uploadingBanner ? 'animate-bounce' : ''}`} />
+                        </div>
+                        <div className="text-center px-4">
+                          <p className="font-bold text-xs">
+                            {uploadingBanner ? 'Đang tải lên MinIO...' : 'Tải Banner Phim (MinIO)'}
+                          </p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">Khuyên dùng tỷ lệ 16:9 (làm ảnh nền hero)</p>
+                        </div>
+                      </button>
                     )}
                   </div>
                 </div>

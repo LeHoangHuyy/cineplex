@@ -95,7 +95,8 @@ export const CinemaManagePage: React.FC = () => {
     setCinemaAddress('');
     setCinemaCity('Hà Nội');
     setCinemaPhone('');
-    setCinemaImage('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80');
+    setCinemaImage('');
+    setUploadError(null);
     setIsCinemaModalOpen(true);
   };
 
@@ -106,11 +107,19 @@ export const CinemaManagePage: React.FC = () => {
     setCinemaCity(c.city);
     setCinemaPhone(c.phone || '');
     setCinemaImage(c.imageUrl || '');
+    setUploadError(null);
     setIsCinemaModalOpen(true);
   };
 
   const handleSaveCinema = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUploadError(null);
+
+    if (!cinemaImage) {
+      setUploadError('Vui lòng tải lên hình ảnh cho cụm rạp.');
+      return;
+    }
+
     const payload = {
       name: cinemaName,
       address: cinemaAddress,
@@ -126,8 +135,8 @@ export const CinemaManagePage: React.FC = () => {
       }
       setIsCinemaModalOpen(false);
       fetchCinemas();
-    } catch (err) {
-      console.error('Error saving cinema:', err);
+    } catch (err: any) {
+      setUploadError(err.response?.data?.message || 'Không thể lưu cụm rạp.');
     }
   };
 
@@ -428,47 +437,80 @@ export const CinemaManagePage: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-bold text-slate-700">Hình Ảnh Rạp *</label>
-                  <input
-                    type="file"
-                    ref={cinemaImageFileInputRef}
-                    onChange={handleUploadCinemaImage}
-                    accept="image/png,image/jpeg,image/webp,image/gif"
-                    className="hidden"
-                  />
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-slate-700 text-xs">Hình Ảnh Rạp *</label>
+                  {cinemaImage && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={uploadingCinemaImage}
+                        onClick={() => cinemaImageFileInputRef.current?.click()}
+                        className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition cursor-pointer"
+                      >
+                        Đổi ảnh khác
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCinemaImage('')}
+                        className="text-[11px] font-bold text-rose-500 hover:text-rose-600 transition cursor-pointer"
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <input
+                  type="file"
+                  ref={cinemaImageFileInputRef}
+                  onChange={handleUploadCinemaImage}
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden"
+                />
+
+                {cinemaImage ? (
+                  <div className="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 h-44 flex items-center justify-center shadow-xs">
+                    <img
+                      src={cinemaImage}
+                      alt="Cinema preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        disabled={uploadingCinemaImage}
+                        onClick={() => cinemaImageFileInputRef.current?.click()}
+                        className="px-3.5 py-2 rounded-xl bg-white text-slate-800 text-xs font-bold shadow-md hover:bg-slate-100 flex items-center gap-1.5 transition"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{uploadingCinemaImage ? 'Đang tải lên...' : 'Tải ảnh khác từ máy (MinIO)'}</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                   <button
                     type="button"
                     disabled={uploadingCinemaImage}
                     onClick={() => cinemaImageFileInputRef.current?.click()}
-                    className="py-1 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition flex items-center gap-1.5 border border-emerald-200 cursor-pointer disabled:opacity-50"
+                    className="w-full h-44 border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50/20 transition cursor-pointer disabled:opacity-50"
                   >
-                    <Upload className={`w-3.5 h-3.5 ${uploadingCinemaImage ? 'animate-bounce' : ''}`} />
-                    <span>{uploadingCinemaImage ? 'Đang tải lên MinIO...' : 'Tải ảnh từ máy (MinIO)'}</span>
-                  </button>
-                </div>
-                <div className="flex gap-3 items-start">
-                  <input
-                    type="url"
-                    placeholder="https://... hoặc tải ảnh từ máy lên MinIO"
-                    value={cinemaImage}
-                    onChange={(e) => setCinemaImage(e.target.value)}
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium text-xs"
-                  />
-                  {cinemaImage && (
-                    <div className="relative group shrink-0">
-                      <img
-                        src={cinemaImage}
-                        alt="Cinema preview"
-                        className="w-16 h-11 object-cover rounded-lg border border-slate-200 shadow-sm"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400';
-                        }}
-                      />
+                    <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-xs text-emerald-600">
+                      <Upload className={`w-5 h-5 ${uploadingCinemaImage ? 'animate-bounce' : ''}`} />
                     </div>
-                  )}
-                </div>
+                    <div className="text-center px-4">
+                      <p className="font-bold text-xs">
+                        {uploadingCinemaImage ? 'Đang tải lên MinIO...' : 'Tải hình ảnh rạp từ máy lên MinIO'}
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Hỗ trợ định dạng PNG, JPG, WEBP</p>
+                    </div>
+                  </button>
+                )}
+
                 {uploadError && (
                   <p className="text-xs text-rose-600 mt-1 font-medium">{uploadError}</p>
                 )}
