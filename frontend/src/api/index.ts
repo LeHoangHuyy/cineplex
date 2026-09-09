@@ -127,8 +127,8 @@ export const adminApi = {
     api.get<Booking>(`/admin/bookings/${id}`),
 
   // Users
-  getAllUsers: (search?: string, page?: number, size?: number, sortBy?: string, direction?: string) => 
-    api.get<PageResponse<User>>('/admin/users', { params: { search, page, size, sortBy, direction } }),
+  getAllUsers: (status?: string, search?: string, page?: number, size?: number, sortBy?: string, direction?: string) => 
+    api.get<PageResponse<User>>('/admin/users', { params: { status, search, page, size, sortBy, direction } }),
   updateUserStatus: (id: string, status: 'ACTIVE' | 'LOCKED') => 
     api.patch<User>(`/admin/users/${id}/status`, { status }),
 };

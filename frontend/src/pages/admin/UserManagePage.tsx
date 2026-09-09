@@ -4,6 +4,12 @@ import { User, UserStatus } from '../../types';
 import { adminApi } from '../../api';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
 
+const STATUS_OPTIONS = [
+  { id: 'ALL', label: 'Tất Cả Trạng Thái' },
+  { id: 'ACTIVE', label: 'Hoạt Động (ACTIVE)' },
+  { id: 'LOCKED', label: 'Đã Bị Khóa (LOCKED)' },
+];
+
 const SORT_OPTIONS = [
   { label: 'Mới nhất', sortBy: 'createdAt', direction: 'desc' },
   { label: 'Cũ nhất', sortBy: 'createdAt', direction: 'asc' },
@@ -17,6 +23,7 @@ export const UserManagePage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,13 +42,14 @@ export const UserManagePage: React.FC = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchUsers(currentPage, search, sortBy, sortDir);
+      fetchUsers(currentPage, statusFilter, search, sortBy, sortDir);
     }, 250);
     return () => clearTimeout(timer);
-  }, [currentPage, search, sortBy, sortDir]);
+  }, [currentPage, statusFilter, search, sortBy, sortDir]);
 
   const fetchUsers = async (
     page: number = currentPage,
+    status: string = statusFilter,
     query: string = search,
     sort: string = sortBy,
     dir: 'asc' | 'desc' = sortDir
@@ -49,6 +57,7 @@ export const UserManagePage: React.FC = () => {
     setLoading(true);
     try {
       const res = await adminApi.getAllUsers(
+        status === 'ALL' ? undefined : status,
         query.trim() ? query.trim() : undefined,
         page - 1,
         ITEMS_PER_PAGE,
@@ -107,7 +116,7 @@ export const UserManagePage: React.FC = () => {
     try {
       await adminApi.updateUserStatus(statusModal.user.id, statusModal.newStatus);
       setStatusModal({ isOpen: false });
-      fetchUsers(currentPage, search);
+      fetchUsers(currentPage, statusFilter, search, sortBy, sortDir);
     } catch (err: any) {
       setStatusModal((prev) => ({
         ...prev,
@@ -132,16 +141,16 @@ export const UserManagePage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => fetchUsers(currentPage)}
+          onClick={() => fetchUsers(currentPage, statusFilter, search, sortBy, sortDir)}
           className="py-2 px-4 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 transition shadow-sm self-start sm:self-auto"
         >
           Làm mới ⟳
         </button>
       </div>
 
-      {/* Search & Sort Bar */}
+      {/* Search & Filter Bar */}
       <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="relative w-full sm:w-96">
+        <div className="relative w-full sm:w-80">
           <input
             type="text"
             placeholder="Tìm theo tên khách hàng, email hoặc số điện thoại..."
@@ -155,25 +164,46 @@ export const UserManagePage: React.FC = () => {
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-2.5" />
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-          <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Sắp xếp:</span>
-          <select
-            value={`${sortBy}-${sortDir}`}
-            onChange={(e) => {
-              const [field, dir] = e.target.value.split('-');
-              setSortBy(field);
-              setSortDir(dir as 'asc' | 'desc');
-              setCurrentPage(1);
-            }}
-            aria-label="Sắp xếp danh sách người dùng"
-            className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={`${opt.sortBy}-${opt.direction}`} value={`${opt.sortBy}-${opt.direction}`}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Trạng thái:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              aria-label="Lọc theo trạng thái người dùng"
+              className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
+            >
+              {STATUS_OPTIONS.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Sắp xếp:</span>
+            <select
+              value={`${sortBy}-${sortDir}`}
+              onChange={(e) => {
+                const [field, dir] = e.target.value.split('-');
+                setSortBy(field);
+                setSortDir(dir as 'asc' | 'desc');
+                setCurrentPage(1);
+              }}
+              aria-label="Sắp xếp danh sách người dùng"
+              className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={`${opt.sortBy}-${opt.direction}`} value={`${opt.sortBy}-${opt.direction}`}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

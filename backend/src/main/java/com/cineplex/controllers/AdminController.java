@@ -161,6 +161,7 @@ public class AdminController {
     // --- User Management ---
     @GetMapping("/users")
     public ResponseEntity<PageResponse<AuthResponse>> getAllUsers(
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -172,7 +173,7 @@ public class AdminController {
             default -> "createdAt";
         };
         Pageable pageable = PageRequest.of(page, size, Sort.by(dir, validSortBy));
-        return ResponseEntity.ok(userService.getAllUsers(search, pageable));
+        return ResponseEntity.ok(userService.getAllUsers(status, search, pageable));
     }
 
     @PatchMapping("/users/{id}/status")

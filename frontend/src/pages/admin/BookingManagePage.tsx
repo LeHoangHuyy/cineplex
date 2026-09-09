@@ -4,6 +4,14 @@ import { Booking, BookingStatus } from '../../types';
 import { adminApi } from '../../api';
 import { ETicketCard } from '../../components/customer/ETicketCard';
 
+const STATUS_OPTIONS = [
+  { id: 'ALL', label: 'Tất Cả Trạng Thái' },
+  { id: 'CONFIRMED', label: 'Đã Xác Nhận (CONFIRMED)' },
+  { id: 'PENDING', label: 'Chờ Thanh Toán (PENDING)' },
+  { id: 'EXPIRED', label: 'Hết Hạn (EXPIRED)' },
+  { id: 'CANCELLED', label: 'Đã Hủy (CANCELLED)' },
+];
+
 const SORT_OPTIONS = [
   { label: 'Mới nhất', sortBy: 'createdAt', direction: 'desc' },
   { label: 'Cũ nhất', sortBy: 'createdAt', direction: 'asc' },
@@ -123,27 +131,27 @@ export const BookingManagePage: React.FC = () => {
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-2.5" />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-            {['ALL', 'CONFIRMED', 'PENDING', 'EXPIRED', 'CANCELLED'].map((st) => (
-              <button
-                key={st}
-                onClick={() => {
-                  setStatusFilter(st);
-                  setCurrentPage(1);
-                }}
-                className={`py-1.5 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                  statusFilter === st
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-                }`}
-              >
-                {st === 'ALL' ? 'Tất Cả' : st}
-              </button>
-            ))}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Trạng thái:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              aria-label="Lọc theo trạng thái đơn hàng"
+              className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
+            >
+              {STATUS_OPTIONS.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.label}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 border-t sm:border-t-0 sm:border-l border-slate-200 pt-2 sm:pt-0 sm:pl-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
             <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Sắp xếp:</span>
             <select
               value={`${sortBy}-${sortDir}`}
@@ -154,7 +162,7 @@ export const BookingManagePage: React.FC = () => {
                 setCurrentPage(1);
               }}
               aria-label="Sắp xếp danh sách đơn đặt vé"
-              className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
+              className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={`${opt.sortBy}-${opt.direction}`} value={`${opt.sortBy}-${opt.direction}`}>

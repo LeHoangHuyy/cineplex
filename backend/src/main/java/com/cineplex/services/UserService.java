@@ -23,7 +23,7 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public PageResponse<AuthResponse> getAllUsers(String search, Pageable pageable) {
+    public PageResponse<AuthResponse> getAllUsers(String status, String search, Pageable pageable) {
         if (!pageable.getSort().isSorted()) {
             pageable = org.springframework.data.domain.PageRequest.of(
                     pageable.getPageNumber(),
@@ -31,8 +31,14 @@ public class UserService {
                     org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")
             );
         }
+        UserStatus userStatus = null;
+        if (status != null && !status.trim().isEmpty() && !"ALL".equalsIgnoreCase(status.trim())) {
+            try {
+                userStatus = UserStatus.valueOf(status.trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
         String cleanSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
-        Page<User> userPage = userRepository.searchUsers(cleanSearch, pageable);
+        Page<User> userPage = userRepository.searchUsers(userStatus, cleanSearch, pageable);
         List<AuthResponse> content = userPage.getContent().stream().map(u -> AuthResponse.builder()
                 .id(u.getId())
                 .email(u.getEmail())
@@ -46,8 +52,13 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<AuthResponse> getAllUsers(String search, Pageable pageable) {
+        return getAllUsers(null, search, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<AuthResponse> getAllUsers(Pageable pageable) {
-        return getAllUsers(null, pageable);
+        return getAllUsers(null, null, pageable);
     }
 
     @Transactional(readOnly = true)

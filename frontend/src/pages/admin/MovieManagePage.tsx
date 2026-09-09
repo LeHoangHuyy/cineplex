@@ -279,27 +279,27 @@ export const MovieManagePage: React.FC = () => {
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-2.5" />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-            {STATUS_FILTERS.map((st) => (
-              <button
-                key={st.id}
-                onClick={() => {
-                  setStatusFilter(st.id);
-                  setCurrentPage(1);
-                }}
-                className={`py-1.5 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 ${
-                  statusFilter === st.id
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-                }`}
-              >
-                {st.label}
-              </button>
-            ))}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Trạng thái:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              aria-label="Lọc theo trạng thái phim"
+              className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
+            >
+              {STATUS_FILTERS.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.label}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 border-t sm:border-t-0 sm:border-l border-slate-200 pt-2 sm:pt-0 sm:pl-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
             <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Sắp xếp:</span>
             <select
               value={`${sortBy}-${sortDir}`}
@@ -310,7 +310,7 @@ export const MovieManagePage: React.FC = () => {
                 setCurrentPage(1);
               }}
               aria-label="Sắp xếp danh sách phim"
-              className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2.5 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
+              className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-700 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={`${opt.sortBy}-${opt.direction}`} value={`${opt.sortBy}-${opt.direction}`}>
