@@ -62,7 +62,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({
             <img
               src={movie.bannerUrl || movie.posterUrl}
               alt={movie.title}
-              className={`w-full h-full object-cover object-top opacity-50 transform transition-transform duration-7000 ease-out ${
+              className={`w-full h-full object-cover object-top opacity-90 transform transition-transform duration-7000 ease-out ${
                 isActive ? 'scale-105' : 'scale-100'
               }`}
             />
