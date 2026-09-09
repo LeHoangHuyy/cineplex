@@ -241,8 +241,14 @@ export const BookingManagePage: React.FC = () => {
 
       {/* Ticket Modal */}
       {selectedBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-2xl bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 sm:p-8 text-slate-800 max-h-[90vh] overflow-y-auto">
+        <div
+          onClick={() => setSelectedBooking(null)}
+          className="fixed inset-0 !m-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-2xl bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 sm:p-8 text-slate-800 max-h-[90vh] overflow-y-auto"
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-black text-slate-900">
                 VÉ ĐIỆN TỬ: {selectedBooking.bookingCode}
