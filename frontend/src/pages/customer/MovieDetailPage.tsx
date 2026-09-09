@@ -4,6 +4,60 @@ import { Film, Play, Clock, Calendar, MapPin, Ticket, User, Sparkles, X, Chevron
 import { Movie, Cinema, Showtime } from '../../types';
 import { movieApi, cinemaApi, showtimeApi } from '../../api';
 
+const getAgeRatingInfo = (rating?: string) => {
+  switch (rating) {
+    case 'P':
+      return {
+        badge: 'P',
+        bg: 'bg-emerald-600 text-white',
+        desc: 'P - Phim dành cho mọi đối tượng khán giả',
+      };
+    case 'K':
+      return {
+        badge: 'K',
+        bg: 'bg-blue-600 text-white',
+        desc: 'K - Khán giả dưới 13 tuổi có phụ huynh hoặc người giám hộ đi cùng',
+      };
+    case 'T13':
+      return {
+        badge: 'T13',
+        bg: 'bg-amber-500 text-white',
+        desc: 'T13 - Phim được phổ biến đến người xem từ đủ 13 tuổi trở lên (13+)',
+      };
+    case 'T16':
+      return {
+        badge: 'T16',
+        bg: 'bg-orange-500 text-white',
+        desc: 'T16 - Phim được phổ biến đến người xem từ đủ 16 tuổi trở lên (16+)',
+      };
+    case 'T18':
+      return {
+        badge: 'T18',
+        bg: 'bg-rose-600 text-white',
+        desc: 'T18 - Phim được phổ biến đến người xem từ đủ 18 tuổi trở lên (18+)',
+      };
+    default:
+      return {
+        badge: rating || 'P',
+        bg: 'bg-slate-600 text-white',
+        desc: rating || 'Phim dành cho mọi đối tượng khán giả',
+      };
+  }
+};
+
+const formatReleaseDate = (dateStr?: string) => {
+  if (!dateStr) return 'Đang cập nhật';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return new Date(dateStr).toLocaleDateString('vi-VN');
+  } catch {
+    return dateStr;
+  }
+};
+
 export const MovieDetailPage: React.FC = () => {
   const { idOrSlug } = useParams<{ idOrSlug: string }>();
   const navigate = useNavigate();
@@ -96,6 +150,8 @@ export const MovieDetailPage: React.FC = () => {
     );
   }
 
+  const ratingInfo = getAgeRatingInfo(movie.ageRating);
+
   // Filter showtimes by cinema if selected
   const filteredShowtimes = showtimes.filter((s) =>
     selectedCinemaId === 'ALL' ? true : s.room.cinemaId === selectedCinemaId
@@ -150,49 +206,58 @@ export const MovieDetailPage: React.FC = () => {
 
           {/* Right: Movie Meta & Description */}
           <div className="md:col-span-3 space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-600 text-white shadow-sm">
-                {movie.ageRating}
-              </span>
-              <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-white/90 backdrop-blur-md border border-white/20 text-slate-800 shadow-sm">
-                {movie.genre}
-              </span>
-              <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-white/90 backdrop-blur-md border border-white/20 text-slate-800 shadow-sm flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                {movie.durationMinutes} phút
-              </span>
-            </div>
-
             <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight drop-shadow-md">
               {movie.title}
             </h1>
 
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4 text-slate-700">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                {movie.director && (
-                  <div>
-                    <span className="text-slate-400 font-bold block">ĐẠO DIỄN:</span>
-                    <span className="font-bold text-slate-800">{movie.director}</span>
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-5 text-slate-700">
+              {/* 1-Column Movie Details */}
+              <div className="flex flex-col space-y-3 text-sm">
+                <div className="flex items-start">
+                  <span className="font-bold text-slate-800 min-w-[110px] sm:min-w-[120px] shrink-0">Đạo diễn:</span>
+                  <span className="font-medium text-slate-600">{movie.director || 'Đang cập nhật'}</span>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="font-bold text-slate-800 min-w-[110px] sm:min-w-[120px] shrink-0">Diễn viên:</span>
+                  <span className="font-medium text-slate-600 leading-relaxed">{movie.castMembers || 'Đang cập nhật'}</span>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="font-bold text-slate-800 min-w-[110px] sm:min-w-[120px] shrink-0">Thể loại:</span>
+                  <span className="font-medium text-slate-600">{movie.genre || 'Đang cập nhật'}</span>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="font-bold text-slate-800 min-w-[110px] sm:min-w-[120px] shrink-0">Khởi chiếu:</span>
+                  <span className="font-medium text-slate-600">{formatReleaseDate(movie.releaseDate)}</span>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="font-bold text-slate-800 min-w-[110px] sm:min-w-[120px] shrink-0">Thời lượng:</span>
+                  <span className="font-medium text-slate-600">{movie.durationMinutes} phút</span>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="font-bold text-slate-800 min-w-[110px] sm:min-w-[120px] shrink-0">Rated:</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`px-2 py-0.5 rounded text-xs font-black shadow-sm ${ratingInfo.bg}`}>
+                      {ratingInfo.badge}
+                    </span>
+                    <span className="text-slate-600 font-medium">
+                      {ratingInfo.desc}
+                    </span>
                   </div>
-                )}
-                {movie.castMembers && (
-                  <div>
-                    <span className="text-slate-400 font-bold block">DIỄN VIÊN:</span>
-                    <span className="font-bold text-slate-800">{movie.castMembers}</span>
-                  </div>
-                )}
-                <div>
-                  <span className="text-slate-400 font-bold block">KHỞI CHIẾU:</span>
-                  <span className="font-bold text-slate-800">{movie.releaseDate}</span>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-100">
+              {/* Nội dung phim (vị trí giữ nguyên) */}
+              <div className="pt-4 border-t border-slate-100">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                   NỘI DUNG PHIM
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  {movie.description}
+                  {movie.description || 'Nội dung phim đang được cập nhật.'}
                 </p>
               </div>
             </div>
