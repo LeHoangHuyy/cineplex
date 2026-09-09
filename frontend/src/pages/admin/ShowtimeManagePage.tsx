@@ -615,14 +615,6 @@ export const ShowtimeManagePage: React.FC = () => {
               <span>Bảng Danh Sách</span>
             </button>
           </div>
-
-          <button
-            onClick={handleOpenAddModal}
-            className="py-2.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Tạo Suất Chiếu Mới</span>
-          </button>
         </div>
       </div>
 
