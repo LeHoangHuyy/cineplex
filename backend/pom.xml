@@ -102,6 +102,13 @@
 			<version>${zxing.version}</version>
 		</dependency>
 
+		<!-- MinIO Client for Object Storage -->
+		<dependency>
+			<groupId>io.minio</groupId>
+			<artifactId>minio</artifactId>
+			<version>8.5.17</version>
+		</dependency>
+
 		<!-- Testing -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

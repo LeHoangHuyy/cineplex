@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Film, Plus, Edit2, Trash2, Search, X, Check, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Film, Plus, Edit2, Trash2, Search, X, Check, Eye, ChevronLeft, ChevronRight, Upload, ImageIcon } from 'lucide-react';
 import { Movie, MovieStatus, AgeRating } from '../../types';
-import { adminApi, movieApi } from '../../api';
+import { adminApi, movieApi, uploadApi } from '../../api';
 
 const STATUS_FILTERS: { id: string; label: string }[] = [
   { id: 'ALL', label: 'Tất Cả' },
@@ -40,6 +40,27 @@ export const MovieManagePage: React.FC = () => {
   const [status, setStatus] = useState<MovieStatus>('NOW_SHOWING');
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingPoster, setUploadingPoster] = useState(false);
+  const posterFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadPoster = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPoster(true);
+    setFormError(null);
+    try {
+      const res = await uploadApi.uploadImage(file);
+      setPosterUrl(res.data.url);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'Không thể upload ảnh lên MinIO.';
+      setFormError(msg);
+    } finally {
+      setUploadingPoster(false);
+      if (posterFileInputRef.current) {
+        posterFileInputRef.current.value = '';
+      }
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -481,14 +502,47 @@ export const MovieManagePage: React.FC = () => {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block font-bold text-slate-700 mb-1">Poster URL (Ảnh dọc) *</label>
-                  <input
-                    type="url"
-                    required
-                    value={posterUrl}
-                    onChange={(e) => setPosterUrl(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-slate-700">Poster Phim (Ảnh dọc) *</label>
+                    <input
+                      type="file"
+                      ref={posterFileInputRef}
+                      onChange={handleUploadPoster}
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      disabled={uploadingPoster}
+                      onClick={() => posterFileInputRef.current?.click()}
+                      className="py-1 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition flex items-center gap-1.5 border border-emerald-200 cursor-pointer disabled:opacity-50"
+                    >
+                      <Upload className={`w-3.5 h-3.5 ${uploadingPoster ? 'animate-bounce' : ''}`} />
+                      <span>{uploadingPoster ? 'Đang tải lên MinIO...' : 'Tải ảnh từ máy (MinIO)'}</span>
+                    </button>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <input
+                      type="url"
+                      required
+                      placeholder="https://... hoặc bấm nút tải ảnh từ máy lên MinIO"
+                      value={posterUrl}
+                      onChange={(e) => setPosterUrl(e.target.value)}
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium text-xs"
+                    />
+                    {posterUrl && (
+                      <div className="relative group shrink-0">
+                        <img
+                          src={posterUrl}
+                          alt="Poster preview"
+                          className="w-12 h-16 object-cover rounded-lg border border-slate-200 shadow-sm"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400';
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="sm:col-span-2">

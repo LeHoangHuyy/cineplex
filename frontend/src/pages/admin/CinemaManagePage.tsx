@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Film, Plus, Edit2, Trash2, MapPin, Grid, X, Save, Heart, Sparkles, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Film, Plus, Edit2, Trash2, MapPin, Grid, X, Save, Heart, Sparkles, Check, Upload } from 'lucide-react';
 import { Cinema, Room, RoomType, Seat, SeatType } from '../../types';
-import { adminApi, cinemaApi } from '../../api';
+import { adminApi, cinemaApi, uploadApi } from '../../api';
 
 export const CinemaManagePage: React.FC = () => {
   const [cinemas, setCinemas] = useState<Cinema[]>([]);
@@ -15,6 +15,25 @@ export const CinemaManagePage: React.FC = () => {
   const [cinemaCity, setCinemaCity] = useState('');
   const [cinemaPhone, setCinemaPhone] = useState('');
   const [cinemaImage, setCinemaImage] = useState('');
+  const [uploadingCinemaImage, setUploadingCinemaImage] = useState(false);
+  const cinemaImageFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadCinemaImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCinemaImage(true);
+    try {
+      const res = await uploadApi.uploadImage(file);
+      setCinemaImage(res.data.url);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Không thể upload ảnh lên MinIO.');
+    } finally {
+      setUploadingCinemaImage(false);
+      if (cinemaImageFileInputRef.current) {
+        cinemaImageFileInputRef.current.value = '';
+      }
+    }
+  };
 
   // Room Modal
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
@@ -361,13 +380,46 @@ export const CinemaManagePage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Hình Ảnh Rạp (URL)</label>
-                <input
-                  type="url"
-                  value={cinemaImage}
-                  onChange={(e) => setCinemaImage(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-700">Hình Ảnh Rạp *</label>
+                  <input
+                    type="file"
+                    ref={cinemaImageFileInputRef}
+                    onChange={handleUploadCinemaImage}
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    disabled={uploadingCinemaImage}
+                    onClick={() => cinemaImageFileInputRef.current?.click()}
+                    className="py-1 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition flex items-center gap-1.5 border border-emerald-200 cursor-pointer disabled:opacity-50"
+                  >
+                    <Upload className={`w-3.5 h-3.5 ${uploadingCinemaImage ? 'animate-bounce' : ''}`} />
+                    <span>{uploadingCinemaImage ? 'Đang tải lên MinIO...' : 'Tải ảnh từ máy (MinIO)'}</span>
+                  </button>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <input
+                    type="url"
+                    placeholder="https://... hoặc tải ảnh từ máy lên MinIO"
+                    value={cinemaImage}
+                    onChange={(e) => setCinemaImage(e.target.value)}
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium text-xs"
+                  />
+                  {cinemaImage && (
+                    <div className="relative group shrink-0">
+                      <img
+                        src={cinemaImage}
+                        alt="Cinema preview"
+                        className="w-16 h-11 object-cover rounded-lg border border-slate-200 shadow-sm"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400';
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">

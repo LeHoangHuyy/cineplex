@@ -133,3 +133,18 @@ export const adminApi = {
     api.patch<User>(`/admin/users/${id}/status`, { status }),
 };
 
+export const uploadApi = {
+  uploadImage: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<{ url: string; originalName: string; size: number; contentType: string }>('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  deleteImage: (url: string) =>
+    api.delete('/upload', { params: { url } }),
+};
+
+
