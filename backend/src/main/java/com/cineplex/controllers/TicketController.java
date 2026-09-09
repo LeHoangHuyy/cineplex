@@ -6,6 +6,7 @@ import com.cineplex.exceptions.ResourceNotFoundException;
 import com.cineplex.repositories.TicketRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -19,6 +20,7 @@ public class TicketController {
     private final TicketRepository ticketRepository;
 
     @GetMapping("/verify/{ticketCode}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> verifyTicket(@PathVariable String ticketCode) {
         Ticket ticket = ticketRepository.findByTicketCode(ticketCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Vé không tồn tại hoặc không hợp lệ: " + ticketCode));

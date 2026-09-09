@@ -51,11 +51,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/movies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/cinemas/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/showtimes/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/tickets/verify/**").permitAll()
                         .requestMatchers("/payments/callback/**").permitAll()
                         
                         // Admin endpoints
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/tickets/verify/**").hasRole("ADMIN")
                         
                         // Customer & Authenticated endpoints
                         .anyRequest().authenticated()
