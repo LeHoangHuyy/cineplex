@@ -91,17 +91,17 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({
       {/* Content Info Container */}
       <div className="relative max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-end pb-16 z-20">
         <div className="max-w-2xl space-y-4 animate-fadeIn" key={currentMovie.id}>
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-bold backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/80 border border-emerald-500/50 text-emerald-400 text-xs font-bold backdrop-blur-md shadow-lg shadow-black/50">
             <Sparkles className="w-3.5 h-3.5" />
             <span>PHIM BOM TẤN NỔI BẬT</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
+          <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight tracking-tight [text-shadow:_0_2px_6px_rgba(0,0,0,0.95),_0_4px_16px_rgba(0,0,0,0.9),_0_8px_32px_rgba(0,0,0,0.85)] drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]">
             {currentMovie.title}
           </h1>
 
-          <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-            <span className="px-2.5 py-0.5 rounded bg-emerald-600 text-white font-bold text-xs shadow-md">
+          <div className="flex items-center gap-3 text-xs sm:text-sm text-white font-medium [text-shadow:_0_1px_4px_rgba(0,0,0,0.95),_0_3px_10px_rgba(0,0,0,0.9)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+            <span className="px-2.5 py-0.5 rounded bg-emerald-600 text-white font-bold text-xs shadow-md shadow-black/40">
               {currentMovie.ageRating}
             </span>
             <span className="font-semibold">{currentMovie.genre}</span>
@@ -109,7 +109,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({
             <span>{currentMovie.durationMinutes} phút</span>
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-200 line-clamp-3 leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)]">
+          <p className="text-xs sm:text-sm text-white font-medium line-clamp-3 leading-relaxed [text-shadow:_0_1px_4px_rgba(0,0,0,0.95),_0_3px_10px_rgba(0,0,0,0.9)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
             {currentMovie.description}
           </p>
 
@@ -126,7 +126,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({
               <button
                 type="button"
                 onClick={() => onWatchTrailer && onWatchTrailer(currentMovie.trailerUrl!, currentMovie.title)}
-                className="py-3.5 px-6 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-sm backdrop-blur-md transition flex items-center gap-2"
+                className="py-3.5 px-6 rounded-full bg-slate-900/70 hover:bg-slate-900/90 border border-white/30 text-white font-bold text-sm backdrop-blur-md transition flex items-center gap-2 shadow-xl shadow-black/50"
               >
                 <Play className="w-4 h-4 text-emerald-400 fill-emerald-400" />
                 <span>Xem Trailer</span>
