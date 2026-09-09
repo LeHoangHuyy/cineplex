@@ -58,6 +58,30 @@ const formatReleaseDate = (dateStr?: string) => {
   }
 };
 
+const getEmbedUrl = (url?: string) => {
+  if (!url || !url.trim()) return '';
+  const trimmed = url.trim();
+
+  // Format: https://youtu.be/VIDEO_ID
+  const shortMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+  if (shortMatch && shortMatch[1]) {
+    return `https://www.youtube.com/embed/${shortMatch[1]}`;
+  }
+
+  // Format: https://www.youtube.com/watch?v=VIDEO_ID
+  const longMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]+)/);
+  if (longMatch && longMatch[1]) {
+    return `https://www.youtube.com/embed/${longMatch[1]}`;
+  }
+
+  // Format: already contains embed
+  if (trimmed.includes('/embed/')) {
+    return trimmed;
+  }
+
+  return trimmed;
+};
+
 export const MovieDetailPage: React.FC = () => {
   const { idOrSlug } = useParams<{ idOrSlug: string }>();
   const navigate = useNavigate();
@@ -264,6 +288,37 @@ export const MovieDetailPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Trailer Section (Placed directly above Showtime Booking) */}
+        {movie.trailerUrl && movie.trailerUrl.trim() !== '' && (
+          <section className="mt-14 pt-10 border-t border-slate-200 space-y-6">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
+                <Play className="w-4 h-4 fill-emerald-600 ml-0.5" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-wide">
+                  TRAILER PHIM
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Xem trước trailer chính thức của phim {movie.title}
+                </p>
+              </div>
+            </div>
+
+            <div className="w-full max-w-4xl mx-auto rounded-3xl overflow-hidden shadow-2xl border border-slate-200 bg-slate-950">
+              <div className="aspect-video w-full">
+                <iframe
+                  src={getEmbedUrl(movie.trailerUrl)}
+                  title={`Trailer: ${movie.title}`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="w-full h-full border-0"
+                />
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Showtime Booking Section */}
         <section className="mt-14 pt-10 border-t border-slate-200 space-y-6">
           <div className="flex items-center gap-2">
@@ -394,8 +449,14 @@ export const MovieDetailPage: React.FC = () => {
 
       {/* Trailer Video Modal */}
       {trailerModalOpen && movie.trailerUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="relative w-full max-w-4xl bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-700">
+        <div
+          onClick={() => setTrailerModalOpen(false)}
+          className="fixed inset-0 !m-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-4xl bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-700"
+          >
             <div className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-800">
               <h4 className="font-bold text-white text-sm truncate">
                 Trailer: {movie.title}
@@ -409,13 +470,9 @@ export const MovieDetailPage: React.FC = () => {
             </div>
             <div className="aspect-video w-full">
               <iframe
-                src={
-                  movie.trailerUrl.includes('watch?v=')
-                    ? movie.trailerUrl.replace('watch?v=', 'embed/')
-                    : movie.trailerUrl
-                }
+                src={getEmbedUrl(movie.trailerUrl)}
                 title={movie.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
                 className="w-full h-full border-0"
               />
