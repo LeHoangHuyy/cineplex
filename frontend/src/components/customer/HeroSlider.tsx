@@ -62,13 +62,10 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({
             <img
               src={movie.bannerUrl || movie.posterUrl}
               alt={movie.title}
-              className={`w-full h-full object-cover object-top opacity-90 transform transition-transform duration-7000 ease-out ${
+              className={`w-full h-full object-cover object-top transform transition-transform duration-7000 ease-out ${
                 isActive ? 'scale-105' : 'scale-100'
               }`}
             />
-            {/* Cinematic Gradient Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/50 to-transparent" />
           </div>
         );
       })}
@@ -99,12 +96,12 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({
             <span>PHIM BOM TẤN NỔI BẬT</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
             {currentMovie.title}
           </h1>
 
-          <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-300">
-            <span className="px-2.5 py-0.5 rounded bg-emerald-600 text-white font-bold text-xs">
+          <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+            <span className="px-2.5 py-0.5 rounded bg-emerald-600 text-white font-bold text-xs shadow-md">
               {currentMovie.ageRating}
             </span>
             <span className="font-semibold">{currentMovie.genre}</span>
@@ -112,7 +109,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({
             <span>{currentMovie.durationMinutes} phút</span>
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-300 line-clamp-3 leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-200 line-clamp-3 leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)]">
             {currentMovie.description}
           </p>
 
