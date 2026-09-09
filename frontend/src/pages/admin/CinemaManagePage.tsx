@@ -49,7 +49,11 @@ export const CinemaManagePage: React.FC = () => {
       const res = await uploadApi.uploadImage(file);
       setCinemaImage(res.data.url);
     } catch (err: any) {
-      setUploadError(err.response?.data?.message || 'Không thể upload ảnh lên MinIO.');
+      const msg =
+        err.response?.status === 413
+          ? 'File ảnh quá lớn (vượt quá dung lượng 25MB cho phép).'
+          : err.response?.data?.message || err.message || 'Không thể upload ảnh lên MinIO.';
+      setUploadError(msg);
     } finally {
       setUploadingCinemaImage(false);
       if (cinemaImageFileInputRef.current) {
@@ -465,7 +469,7 @@ export const CinemaManagePage: React.FC = () => {
                   type="file"
                   ref={cinemaImageFileInputRef}
                   onChange={handleUploadCinemaImage}
-                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  accept="image/*"
                   className="hidden"
                 />
 

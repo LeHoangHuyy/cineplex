@@ -79,8 +79,8 @@ public class MinioService {
         }
 
         // Validate image format
-        if (!extension.matches("\\.(jpg|jpeg|png|webp|gif|svg)$")) {
-            throw new IllegalArgumentException("Định dạng file không hợp lệ! Vui lòng tải lên ảnh định dạng jpg, jpeg, png, webp, gif hoặc svg.");
+        if (!extension.matches("\\.(jpg|jpeg|png|webp|gif|svg|jfif|bmp|avif)$")) {
+            throw new IllegalArgumentException("Định dạng file không hợp lệ! Vui lòng tải lên ảnh định dạng jpg, jpeg, png, webp, gif, svg, jfif hoặc avif.");
         }
 
         String objectName = UUID.randomUUID() + extension;

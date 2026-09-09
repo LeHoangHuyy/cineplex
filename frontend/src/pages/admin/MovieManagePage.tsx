@@ -78,7 +78,10 @@ export const MovieManagePage: React.FC = () => {
       const res = await uploadApi.uploadImage(file);
       setPosterUrl(res.data.url);
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'Không thể upload poster lên MinIO.';
+      const msg =
+        err.response?.status === 413
+          ? 'File ảnh quá lớn (vượt quá dung lượng 25MB cho phép).'
+          : err.response?.data?.message || err.message || 'Không thể upload poster lên MinIO.';
       setFormError(msg);
     } finally {
       setUploadingPoster(false);
@@ -97,7 +100,10 @@ export const MovieManagePage: React.FC = () => {
       const res = await uploadApi.uploadImage(file);
       setBannerUrl(res.data.url);
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'Không thể upload banner lên MinIO.';
+      const msg =
+        err.response?.status === 413
+          ? 'File ảnh quá lớn (vượt quá dung lượng 25MB cho phép).'
+          : err.response?.data?.message || err.message || 'Không thể upload banner lên MinIO.';
       setFormError(msg);
     } finally {
       setUploadingBanner(false);
@@ -647,7 +653,7 @@ export const MovieManagePage: React.FC = () => {
                       type="file"
                       ref={posterFileInputRef}
                       onChange={handleUploadPoster}
-                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      accept="image/*"
                       className="hidden"
                     />
 
@@ -725,7 +731,7 @@ export const MovieManagePage: React.FC = () => {
                       type="file"
                       ref={bannerFileInputRef}
                       onChange={handleUploadBanner}
-                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      accept="image/*"
                       className="hidden"
                     />
 
