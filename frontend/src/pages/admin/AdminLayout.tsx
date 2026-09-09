@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, Film, CalendarDays, 
-  Ticket, Users, ArrowLeft, LogOut, ShieldCheck, Film as CinemaIcon,
-  PanelLeftOpen, PanelLeftClose, ChevronUp
+  LayoutDashboard, Clapperboard, CalendarDays, 
+  Ticket, Users, ArrowLeft, LogOut, ShieldCheck, Building2,
+  PanelLeftOpen, PanelLeftClose, ChevronUp, Film
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -66,8 +66,8 @@ export const AdminLayout: React.FC = () => {
 
   const menuItems = [
     { label: 'Tổng Quan & Báo Cáo', path: '/admin', icon: LayoutDashboard },
-    { label: 'Quản Lý Phim', path: '/admin/movies', icon: Film },
-    { label: 'Quản Lý Rạp & Phòng', path: '/admin/cinemas', icon: CinemaIcon },
+    { label: 'Quản Lý Phim', path: '/admin/movies', icon: Clapperboard },
+    { label: 'Quản Lý Rạp & Phòng', path: '/admin/cinemas', icon: Building2 },
     { label: 'Quản Lý Suất Chiếu', path: '/admin/showtimes', icon: CalendarDays },
     { label: 'Quản Lý Đặt Vé', path: '/admin/bookings', icon: Ticket },
     { label: 'Quản Lý Người Dùng', path: '/admin/users', icon: Users },

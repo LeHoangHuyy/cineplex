@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Film, Plus, Edit2, Trash2, Search, X, Check, Eye, ChevronLeft, ChevronRight, Upload, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, Filter } from 'lucide-react';
+import { Film, Clapperboard, Plus, Edit2, Trash2, Search, X, Check, Eye, ChevronLeft, ChevronRight, Upload, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, Filter } from 'lucide-react';
 import { Movie, MovieStatus, AgeRating } from '../../types';
 import { adminApi, movieApi, uploadApi } from '../../api';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
@@ -280,7 +280,7 @@ export const MovieManagePage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-            <Film className="w-7 h-7 text-emerald-600" />
+            <Clapperboard className="w-7 h-7 text-emerald-600" />
             QUẢN LÝ PHIM CHIẾU
           </h1>
           <p className="text-xs text-slate-500 mt-1">

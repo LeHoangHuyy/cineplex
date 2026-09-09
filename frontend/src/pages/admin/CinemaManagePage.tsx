@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Film, Plus, Edit2, Trash2, MapPin, Grid, X, Save, Heart, Sparkles, Check, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Building2, Plus, Edit2, Trash2, MapPin, Grid, X, Save, Heart, Sparkles, Check, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Cinema, Room, RoomType, Seat, SeatType } from '../../types';
 import { adminApi, cinemaApi, uploadApi } from '../../api';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
@@ -262,7 +262,7 @@ export const CinemaManagePage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-            <Film className="w-7 h-7 text-emerald-600" />
+            <Building2 className="w-7 h-7 text-emerald-600" />
             QUẢN LÝ RẠP & PHÒNG CHIẾU
           </h1>
           <p className="text-xs text-slate-500 mt-1">
