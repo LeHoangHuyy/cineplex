@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Search, Lock, Unlock, Shield, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { User, UserStatus } from '../../types';
 import { adminApi } from '../../api';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 
 export const UserManagePage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -11,6 +12,15 @@ export const UserManagePage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const ITEMS_PER_PAGE = 10;
+
+  // Status Confirm Modal State
+  const [statusModal, setStatusModal] = useState<{
+    isOpen: boolean;
+    user?: User;
+    newStatus?: UserStatus;
+    isLoading?: boolean;
+    errorMessage?: string | null;
+  }>({ isOpen: false });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -44,17 +54,30 @@ export const UserManagePage: React.FC = () => {
     setCurrentPage(newPage);
   };
 
-  const handleToggleStatus = async (user: User) => {
+  const promptToggleStatus = (user: User) => {
     const newStatus: UserStatus = user.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
-    const actionText = newStatus === 'LOCKED' ? 'KHÓA' : 'MỞ KHÓA';
+    setStatusModal({
+      isOpen: true,
+      user,
+      newStatus,
+      isLoading: false,
+      errorMessage: null,
+    });
+  };
 
-    if (window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản "${user.email}"?`)) {
-      try {
-        await adminApi.updateUserStatus(user.id, newStatus);
-        fetchUsers(currentPage, search);
-      } catch (err: any) {
-        alert(err.response?.data?.message || 'Không thể cập nhật trạng thái người dùng.');
-      }
+  const handleConfirmToggleStatus = async () => {
+    if (!statusModal.user || !statusModal.newStatus) return;
+    setStatusModal((prev) => ({ ...prev, isLoading: true, errorMessage: null }));
+    try {
+      await adminApi.updateUserStatus(statusModal.user.id, statusModal.newStatus);
+      setStatusModal({ isOpen: false });
+      fetchUsers(currentPage, search);
+    } catch (err: any) {
+      setStatusModal((prev) => ({
+        ...prev,
+        isLoading: false,
+        errorMessage: err.response?.data?.message || 'Không thể cập nhật trạng thái người dùng.',
+      }));
     }
   };
 
@@ -171,7 +194,7 @@ export const UserManagePage: React.FC = () => {
                       <td className="py-3.5 px-5 text-right">
                         {!isAdminRole && (
                           <button
-                            onClick={() => handleToggleStatus(u)}
+                            onClick={() => promptToggleStatus(u)}
                             className={`py-1.5 px-3 rounded-xl font-bold text-xs transition flex items-center gap-1 ml-auto shadow-sm ${
                               isActive
                                 ? 'bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100'
@@ -244,6 +267,30 @@ export const UserManagePage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Toggle Status Confirmation Modal */}
+      <ConfirmModal
+        isOpen={statusModal.isOpen}
+        onClose={() => !statusModal.isLoading && setStatusModal({ isOpen: false })}
+        onConfirm={handleConfirmToggleStatus}
+        title={statusModal.newStatus === 'LOCKED' ? 'Xác Nhận Khóa Tài Khoản' : 'Xác Nhận Mở Khóa Tài Khoản'}
+        message={
+          <>
+            Bạn có chắc chắn muốn {statusModal.newStatus === 'LOCKED' ? 'khóa' : 'mở khóa'} tài khoản{' '}
+            <strong className="text-slate-900 font-bold">"{statusModal.user?.email}"</strong> không?
+          </>
+        }
+        subMessage={
+          statusModal.newStatus === 'LOCKED'
+            ? 'Người dùng bị khóa sẽ không thể đăng nhập hoặc thực hiện đặt vé.'
+            : 'Tài khoản người dùng sẽ được kích hoạt trở lại trạng thái bình thường.'
+        }
+        confirmText={statusModal.newStatus === 'LOCKED' ? 'Khóa Tài Khoản' : 'Mở Khóa'}
+        cancelText="Hủy Bỏ"
+        type={statusModal.newStatus === 'LOCKED' ? 'danger' : 'warning'}
+        isLoading={statusModal.isLoading}
+        errorMessage={statusModal.errorMessage}
+      />
     </div>
   );
 };

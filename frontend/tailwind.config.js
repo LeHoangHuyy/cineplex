@@ -28,7 +28,21 @@ export default {
           gold: '#d97706',
           accent: '#10b981'
         }
-      }
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        scaleUp: {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+      },
+      animation: {
+        fadeIn: 'fadeIn 0.2s ease-out',
+        scaleUp: 'scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+      },
     },
   },
   plugins: [],

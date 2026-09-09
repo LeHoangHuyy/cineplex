@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Showtime, Movie, Cinema, Room, ShowtimeStatus, RoomType } from '../../types';
 import { adminApi, cinemaApi, movieApi, showtimeApi } from '../../api';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 
 // Timeline Configuration: 08:00 AM to 01:00 AM next day (17 operating hours)
 const TIMELINE_START_HOUR = 8;
@@ -177,6 +178,14 @@ export const ShowtimeManagePage: React.FC = () => {
 
   // Quick detail preview
   const [activeHoverShowtime, setActiveHoverShowtime] = useState<Showtime | null>(null);
+
+  // Delete Confirm Modal State
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    showtime?: Showtime;
+    isLoading?: boolean;
+    errorMessage?: string | null;
+  }>({ isOpen: false });
 
   // ----------------------------------------------------
   // INITIAL DATA LOAD
@@ -475,18 +484,32 @@ export const ShowtimeManagePage: React.FC = () => {
     }
   };
 
-  // Delete Showtime
-  const handleDeleteShowtime = async (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn hủy suất chiếu này? Hệ thống sẽ giải phóng khung giờ phòng chiếu.')) {
-      try {
-        await adminApi.deleteShowtime(id);
-        if (selectedDayCinemaId && selectedDate) {
-          fetchDayShowtimes(selectedDayCinemaId, selectedDate);
-        }
-        fetchShowtimes(selectedCinemaFilter, search, currentPage);
-      } catch (err) {
-        console.error('Error deleting showtime:', err);
+  // Delete Showtime Handlers
+  const promptDeleteShowtime = (st: Showtime) => {
+    setDeleteModal({
+      isOpen: true,
+      showtime: st,
+      isLoading: false,
+      errorMessage: null,
+    });
+  };
+
+  const handleConfirmDeleteShowtime = async () => {
+    if (!deleteModal.showtime) return;
+    setDeleteModal((prev) => ({ ...prev, isLoading: true, errorMessage: null }));
+    try {
+      await adminApi.deleteShowtime(deleteModal.showtime.id);
+      setDeleteModal({ isOpen: false });
+      if (selectedDayCinemaId && selectedDate) {
+        fetchDayShowtimes(selectedDayCinemaId, selectedDate);
       }
+      fetchShowtimes(selectedCinemaFilter, search, currentPage);
+    } catch (err: any) {
+      setDeleteModal((prev) => ({
+        ...prev,
+        isLoading: false,
+        errorMessage: err.response?.data?.message || 'Không thể hủy suất chiếu. Suất chiếu có thể đã có khách đặt vé.',
+      }));
     }
   };
 
@@ -1022,7 +1045,7 @@ export const ShowtimeManagePage: React.FC = () => {
                                           type="button"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            handleDeleteShowtime(st.id);
+                                            promptDeleteShowtime(st);
                                           }}
                                           className="p-1 rounded hover:bg-rose-100 text-rose-700"
                                           title="Hủy suất chiếu"
@@ -1221,7 +1244,7 @@ export const ShowtimeManagePage: React.FC = () => {
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => handleDeleteShowtime(st.id)}
+                              onClick={() => promptDeleteShowtime(st)}
                               className="p-2 rounded-xl bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-600 transition shadow-sm border border-slate-200"
                               title="Hủy suất chiếu"
                             >
@@ -1560,6 +1583,44 @@ export const ShowtimeManagePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Cancel/Delete Showtime Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => !deleteModal.isLoading && setDeleteModal({ isOpen: false })}
+        onConfirm={handleConfirmDeleteShowtime}
+        title="Xác Nhận Hủy Suất Chiếu"
+        message={
+          <>
+            Bạn có chắc chắn muốn hủy suất chiếu phim <strong className="text-slate-900 font-bold">"{deleteModal.showtime?.movie?.title}"</strong> không?
+            {deleteModal.showtime && (
+              <span className="block mt-1 text-slate-500 text-xs">
+                Khung giờ:{' '}
+                <span className="font-bold text-slate-700">
+                  {new Date(deleteModal.showtime.startTime).toLocaleTimeString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                  })}{' '}
+                  -{' '}
+                  {new Date(deleteModal.showtime.endTime).toLocaleTimeString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                  })}{' '}
+                  • {deleteModal.showtime.room?.name}
+                </span>
+              </span>
+            )}
+          </>
+        }
+        subMessage="Lưu ý: Hệ thống sẽ giải phóng khung giờ phòng chiếu và không thể hoàn tác."
+        confirmText="Hủy Suất Chiếu"
+        cancelText="Quay Lại"
+        type="danger"
+        isLoading={deleteModal.isLoading}
+        errorMessage={deleteModal.errorMessage}
+      />
     </div>
   );
 };

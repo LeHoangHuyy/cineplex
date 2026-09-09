@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Film, Plus, Edit2, Trash2, MapPin, Grid, X, Save, Heart, Sparkles, Check, Upload } from 'lucide-react';
+import { Film, Plus, Edit2, Trash2, MapPin, Grid, X, Save, Heart, Sparkles, Check, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Cinema, Room, RoomType, Seat, SeatType } from '../../types';
 import { adminApi, cinemaApi, uploadApi } from '../../api';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 
 export const CinemaManagePage: React.FC = () => {
   const [cinemas, setCinemas] = useState<Cinema[]>([]);
@@ -16,17 +17,39 @@ export const CinemaManagePage: React.FC = () => {
   const [cinemaPhone, setCinemaPhone] = useState('');
   const [cinemaImage, setCinemaImage] = useState('');
   const [uploadingCinemaImage, setUploadingCinemaImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const cinemaImageFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Toast Notification State
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Delete Confirm Modal State
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    type: 'cinema' | 'room';
+    id: string;
+    name: string;
+    isLoading?: boolean;
+    errorMessage?: string | null;
+  }>({
+    isOpen: false,
+    type: 'cinema',
+    id: '',
+    name: '',
+    isLoading: false,
+    errorMessage: null,
+  });
 
   const handleUploadCinemaImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingCinemaImage(true);
+    setUploadError(null);
     try {
       const res = await uploadApi.uploadImage(file);
       setCinemaImage(res.data.url);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Không thể upload ảnh lên MinIO.');
+      setUploadError(err.response?.data?.message || 'Không thể upload ảnh lên MinIO.');
     } finally {
       setUploadingCinemaImage(false);
       if (cinemaImageFileInputRef.current) {
@@ -108,14 +131,49 @@ export const CinemaManagePage: React.FC = () => {
     }
   };
 
-  const handleDeleteCinema = async (id: string, name: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa rạp "${name}" và toàn bộ phòng chiếu liên quan?`)) {
-      try {
-        await adminApi.deleteCinema(id);
-        fetchCinemas();
-      } catch (err) {
-        console.error('Error deleting cinema:', err);
+  const promptDeleteCinema = (id: string, name: string) => {
+    setDeleteModal({
+      isOpen: true,
+      type: 'cinema',
+      id,
+      name,
+      isLoading: false,
+      errorMessage: null,
+    });
+  };
+
+  const promptDeleteRoom = (roomId: string, rName: string) => {
+    setDeleteModal({
+      isOpen: true,
+      type: 'room',
+      id: roomId,
+      name: rName,
+      isLoading: false,
+      errorMessage: null,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.id) return;
+    setDeleteModal((prev) => ({ ...prev, isLoading: true, errorMessage: null }));
+    try {
+      if (deleteModal.type === 'cinema') {
+        await adminApi.deleteCinema(deleteModal.id);
+      } else {
+        await adminApi.deleteRoom(deleteModal.id);
       }
+      setDeleteModal((prev) => ({ ...prev, isOpen: false }));
+      fetchCinemas();
+    } catch (err: any) {
+      const defaultMsg =
+        deleteModal.type === 'cinema'
+          ? 'Không thể xóa rạp. Rạp có thể đang chứa phòng chiếu có suất chiếu đang hoạt động.'
+          : 'Không thể xóa phòng chiếu. Phòng chiếu có thể đang có suất chiếu hoặc vé liên quan.';
+      setDeleteModal((prev) => ({
+        ...prev,
+        isLoading: false,
+        errorMessage: err.response?.data?.message || defaultMsg,
+      }));
     }
   };
 
@@ -143,17 +201,6 @@ export const CinemaManagePage: React.FC = () => {
       fetchCinemas();
     } catch (err) {
       console.error('Error saving room:', err);
-    }
-  };
-
-  const handleDeleteRoom = async (roomId: string, rName: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa phòng "${rName}"?`)) {
-      try {
-        await adminApi.deleteRoom(roomId);
-        fetchCinemas();
-      } catch (err) {
-        console.error('Error deleting room:', err);
-      }
     }
   };
 
@@ -185,10 +232,12 @@ export const CinemaManagePage: React.FC = () => {
         seats: roomSeats,
       });
       setIsSeatModalOpen(false);
-      alert('Đã cập nhật sơ đồ ghế phòng chiếu thành công!');
-    } catch (err) {
+      setToastMessage({ type: 'success', text: 'Đã cập nhật sơ đồ ghế phòng chiếu thành công!' });
+      setTimeout(() => setToastMessage(null), 4000);
+    } catch (err: any) {
       console.error('Error saving seat layout:', err);
-      alert('Lỗi lưu sơ đồ ghế.');
+      setToastMessage({ type: 'error', text: err.response?.data?.message || 'Lỗi lưu sơ đồ ghế.' });
+      setTimeout(() => setToastMessage(null), 4000);
     } finally {
       setSavingSeats(false);
     }
@@ -259,7 +308,7 @@ export const CinemaManagePage: React.FC = () => {
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => handleDeleteCinema(cinema.id, cinema.name)}
+                    onClick={() => promptDeleteCinema(cinema.id, cinema.name)}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-600 transition shadow-sm border border-slate-200"
                     title="Xóa rạp"
                   >
@@ -298,7 +347,7 @@ export const CinemaManagePage: React.FC = () => {
                           <Grid className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => handleDeleteRoom(room.id, room.name)}
+                          onClick={() => promptDeleteRoom(room.id, room.name)}
                           className="p-2 rounded-xl bg-white hover:bg-rose-600 hover:text-white text-slate-600 transition shadow-sm border border-slate-200"
                           title="Xóa phòng"
                         >
@@ -420,6 +469,9 @@ export const CinemaManagePage: React.FC = () => {
                     </div>
                   )}
                 </div>
+                {uploadError && (
+                  <p className="text-xs text-rose-600 mt-1 font-medium">{uploadError}</p>
+                )}
               </div>
 
               <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
@@ -668,6 +720,51 @@ export const CinemaManagePage: React.FC = () => {
                 {savingSeats ? 'Đang lưu...' : 'LƯU SƠ ĐỒ GHẾ'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal (Cinema / Room) */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => !deleteModal.isLoading && setDeleteModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={handleConfirmDelete}
+        title={deleteModal.type === 'cinema' ? 'Xác Nhận Xóa Cụm Rạp' : 'Xác Nhận Xóa Phòng Chiếu'}
+        message={
+          deleteModal.type === 'cinema' ? (
+            <>
+              Bạn có chắc chắn muốn xóa cụm rạp <strong className="text-slate-900 font-bold">"{deleteModal.name}"</strong> và toàn bộ phòng chiếu liên quan không?
+            </>
+          ) : (
+            <>
+              Bạn có chắc chắn muốn xóa phòng chiếu <strong className="text-slate-900 font-bold">"{deleteModal.name}"</strong> không?
+            </>
+          )
+        }
+        subMessage="Lưu ý: Dữ liệu bị xóa sẽ không thể phục hồi."
+        confirmText="Xác Nhận Xóa"
+        cancelText="Hủy Bỏ"
+        type="danger"
+        isLoading={deleteModal.isLoading}
+        errorMessage={deleteModal.errorMessage}
+      />
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 animate-fadeIn">
+          <div
+            className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border text-sm font-bold ${
+              toastMessage.type === 'success'
+                ? 'bg-emerald-600 border-emerald-500 text-white'
+                : 'bg-rose-600 border-rose-500 text-white'
+            }`}
+          >
+            {toastMessage.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span>{toastMessage.text}</span>
           </div>
         </div>
       )}

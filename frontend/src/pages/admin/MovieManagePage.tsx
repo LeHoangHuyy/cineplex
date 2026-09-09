@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Film, Plus, Edit2, Trash2, Search, X, Check, Eye, ChevronLeft, ChevronRight, Upload, ImageIcon } from 'lucide-react';
 import { Movie, MovieStatus, AgeRating } from '../../types';
 import { adminApi, movieApi, uploadApi } from '../../api';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 
 const STATUS_FILTERS: { id: string; label: string }[] = [
   { id: 'ALL', label: 'Tất Cả' },
@@ -23,6 +24,15 @@ export const MovieManagePage: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
+
+  // Delete Confirm Modal State
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    movieId?: string;
+    movieTitle?: string;
+    isLoading?: boolean;
+    errorMessage?: string | null;
+  }>({ isOpen: false });
 
   // Form State
   const [title, setTitle] = useState('');
@@ -166,14 +176,29 @@ export const MovieManagePage: React.FC = () => {
     }
   };
 
-  const handleDeleteMovie = async (id: string, movieTitle: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa phim "${movieTitle}"?`)) {
-      try {
-        await adminApi.deleteMovie(id);
-        fetchMovies(currentPage, statusFilter, search);
-      } catch (err: any) {
-        alert(err.response?.data?.message || 'Không thể xóa phim.');
-      }
+  const promptDeleteMovie = (id: string, movieTitle: string) => {
+    setDeleteModal({
+      isOpen: true,
+      movieId: id,
+      movieTitle,
+      isLoading: false,
+      errorMessage: null,
+    });
+  };
+
+  const handleConfirmDeleteMovie = async () => {
+    if (!deleteModal.movieId) return;
+    setDeleteModal((prev) => ({ ...prev, isLoading: true, errorMessage: null }));
+    try {
+      await adminApi.deleteMovie(deleteModal.movieId);
+      setDeleteModal({ isOpen: false });
+      fetchMovies(currentPage, statusFilter, search);
+    } catch (err: any) {
+      setDeleteModal((prev) => ({
+        ...prev,
+        isLoading: false,
+        errorMessage: err.response?.data?.message || 'Không thể xóa phim. Phim có thể đang có suất chiếu hoặc dữ liệu vé liên quan.',
+      }));
     }
   };
 
@@ -308,7 +333,7 @@ export const MovieManagePage: React.FC = () => {
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDeleteMovie(m.id, m.title)}
+                        onClick={() => promptDeleteMovie(m.id, m.title)}
                         className="p-2 rounded-xl bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-600 transition shadow-sm border border-slate-200"
                         title="Xóa phim"
                       >
@@ -586,6 +611,25 @@ export const MovieManagePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Movie Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => !deleteModal.isLoading && setDeleteModal({ isOpen: false })}
+        onConfirm={handleConfirmDeleteMovie}
+        title="Xác Nhận Xóa Phim"
+        message={
+          <>
+            Bạn có chắc chắn muốn xóa phim <strong className="text-slate-900 font-bold">"{deleteModal.movieTitle}"</strong> không?
+          </>
+        }
+        subMessage="Lưu ý: Thao tác này sẽ xóa phim vĩnh viễn khỏi hệ thống và không thể hoàn tác."
+        confirmText="Xác Nhận Xóa"
+        cancelText="Hủy Bỏ"
+        type="danger"
+        isLoading={deleteModal.isLoading}
+        errorMessage={deleteModal.errorMessage}
+      />
     </div>
   );
 };
