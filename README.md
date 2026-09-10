@@ -256,17 +256,26 @@ cineplex/
 │   └── src/main/
 │       ├── java/com/cineplex/
 │       │   ├── CineplexApplication.java
-│       │   ├── config/             # SecurityConfig, RedisConfig, RabbitMQConfig, DataInitializer
-│       │   ├── controllers/        # Auth, Movie, Cinema, Showtime, Booking, Payment, Admin controllers
-│       │   ├── dtos/               # Request & Response DTOs
-│       │   ├── entities/           # JPA Entities (User, Movie, Cinema, Room, Seat, Showtime, Booking, Ticket, Payment)
-│       │   ├── exceptions/         # GlobalExceptionHandler & Custom Exceptions
-│       │   ├── mq/                 # RabbitMQ Producer & BookingExpirationConsumer
-│       │   ├── repositories/       # Spring Data JPA Repositories
-│       │   ├── security/           # JwtTokenProvider, UserDetailsServiceImpl, JwtAuthFilter
-│       │   ├── services/           # AuthService, MovieService, ShowtimeService, SeatLockService, BookingService, PaymentService, DashboardService
-│       │   └── utils/              # QRCodeGenerator (ZXing), SlugUtils
+│       │   ├── common/             # Tầng hạ tầng chung (Cross-cutting Concerns)
+│       │   │   ├── config/         # SecurityConfig, RedisConfig, RabbitMQConfig, WebMvcCorsConfig
+│       │   │   ├── dto/            # PageResponse dùng chung
+│       │   │   ├── exceptions/     # GlobalExceptionHandler, BadRequestException, ResourceNotFoundException
+│       │   │   ├── mq/             # RabbitMQProducer
+│       │   │   ├── security/       # JwtTokenProvider, UserDetailsServiceImpl, JwtAuthFilter
+│       │   │   └── utils/          # QRCodeGenerator (ZXing), SlugUtils
+│       │   └── features/           # Tầng tính năng độc lập (Feature Layer / Vertical Slice)
+│       │       ├── admin/          # Admin Dashboard & Facade Controller
+│       │       ├── auth/           # Đăng ký, Đăng nhập, Profile & JWT Response
+│       │       ├── booking/        # Đặt vé, Giữ ghế Redis, Queue giải phóng ghế
+│       │       ├── cinema/         # Cụm rạp, Phòng chiếu, Quản lý sơ đồ ghế
+│       │       ├── movie/          # Quản lý phim, Tra cứu, Đánh giá độ tuổi
+│       │       ├── payment/        # Cổng thanh toán QR Code (ZaloPay, MoMo, VNPay)
+│       │       ├── showtime/       # Suất chiếu, Ghế theo suất, Chống trùng lịch
+│       │       ├── ticket/         # Vé điện tử, Kiểm tra và soát vé QR
+│       │       ├── upload/         # Tải lên và quản lý ảnh với MinIO
+│       │       └── user/           # Quản lý người dùng, Khóa/Mở khóa tài khoản
 │       └── resources/
+│           ├── db/migration/       # Flyway database migrations (DDL & Seeds)
 │           └── application.yml     # Cấu hình Database, Redis, RabbitMQ, JWT Secret
 └── frontend/                       # Client UI (React 18 + Vite + TypeScript + Tailwind CSS)
     ├── Dockerfile                  # Multi-stage Dockerfile cho React + Nginx
