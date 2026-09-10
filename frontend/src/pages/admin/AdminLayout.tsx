@@ -86,48 +86,50 @@ export const AdminLayout: React.FC = () => {
           isCollapsed ? 'md:w-20' : 'md:w-64'
         } bg-white border-r border-slate-200 shrink-0 flex flex-col justify-between md:h-screen md:sticky md:top-0 shadow-sm z-30 transition-all duration-300 ease-in-out`}
       >
-        <div className={`${isCollapsed ? 'p-3.5' : 'p-6'} overflow-y-auto flex-1 transition-all duration-300`}>
+        <div className="py-6 px-3.5 overflow-y-auto overflow-x-hidden flex-1">
           {/* Top Logo & Toggle Area */}
-          {isCollapsed ? (
-            /* Collapsed State: Hovering over Cineplex logo reveals the expand icon */
-            <button
-              type="button"
-              onClick={() => setIsCollapsed(false)}
-              title="Mở rộng sidebar"
-              className="relative group w-10 h-10 mx-auto mb-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-600/30 transition-all hover:scale-105 cursor-pointer"
-            >
-              {/* Default Cineplex Logo Icon */}
-              <Film className="w-5 h-5 text-white transition-all duration-200 group-hover:opacity-0 group-hover:scale-75" />
-              {/* Expand Sidebar Icon on Hover */}
-              <PanelLeftOpen className="w-5 h-5 text-white absolute inset-0 m-auto opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200" />
-            </button>
-          ) : (
-            /* Expanded State: Brand Logo + Collapse Button */
-            <div className="flex items-center justify-between gap-2 mb-8">
-              <Link to="/" className="flex items-center gap-3 group min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-600/30 shrink-0">
-                  <Film className="w-5 h-5 text-white" />
-                </div>
-                <div className="truncate">
-                  <span className="text-xl font-black tracking-wider text-slate-900 block truncate">
-                    CINE<span className="text-emerald-600">PLEX</span>
-                  </span>
-                  <span className="block text-[9px] tracking-widest text-emerald-600 font-black -mt-0.5">
-                    ADMIN CONSOLE
-                  </span>
-                </div>
-              </Link>
-
+          <div className="h-10 mb-8 flex items-center shrink-0">
+            {isCollapsed ? (
+              /* Collapsed State: Hovering over Cineplex logo reveals the expand icon */
               <button
                 type="button"
-                onClick={() => setIsCollapsed(true)}
-                title="Thu gọn sidebar"
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition border border-transparent hover:border-slate-200 shrink-0"
+                onClick={() => setIsCollapsed(false)}
+                title="Mở rộng sidebar"
+                className="relative group w-10 h-10 mx-auto rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-600/30 transition-all hover:scale-105 cursor-pointer shrink-0"
               >
-                <PanelLeftClose className="w-4 h-4" />
+                {/* Default Cineplex Logo Icon */}
+                <Film className="w-5 h-5 text-white transition-all duration-200 group-hover:opacity-0 group-hover:scale-75" />
+                {/* Expand Sidebar Icon on Hover */}
+                <PanelLeftOpen className="w-5 h-5 text-white absolute inset-0 m-auto opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200" />
               </button>
-            </div>
-          )}
+            ) : (
+              /* Expanded State: Brand Logo + Collapse Button */
+              <div className="w-full flex items-center justify-between gap-2 min-w-0">
+                <Link to="/" className="flex items-center gap-3 group min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-600/30 shrink-0">
+                    <Film className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="truncate">
+                    <span className="text-xl font-black tracking-wider text-slate-900 block truncate leading-tight">
+                      CINE<span className="text-emerald-600">PLEX</span>
+                    </span>
+                    <span className="block text-[9px] tracking-widest text-emerald-600 font-black leading-none">
+                      ADMIN CONSOLE
+                    </span>
+                  </div>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setIsCollapsed(true)}
+                  title="Thu gọn sidebar"
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition border border-transparent hover:border-slate-200 shrink-0 cursor-pointer"
+                >
+                  <PanelLeftClose className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Navigation Links */}
           <nav className="space-y-1.5 text-xs">
@@ -139,16 +141,16 @@ export const AdminLayout: React.FC = () => {
                   key={item.path}
                   to={item.path}
                   title={isCollapsed ? item.label : undefined}
-                  className={`flex items-center ${
-                    isCollapsed ? 'justify-center px-0 py-3' : 'gap-3 px-4 py-3'
-                  } rounded-2xl font-bold transition ${
+                  className={`h-11 flex items-center ${
+                    isCollapsed ? 'justify-center px-0' : 'gap-3 px-3.5'
+                  } rounded-2xl font-bold transition-all duration-200 min-w-0 ${
                     active
                       ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  {!isCollapsed && <span className="truncate">{item.label}</span>}
+                  {!isCollapsed && <span className="truncate whitespace-nowrap">{item.label}</span>}
                 </Link>
               );
             })}
@@ -198,23 +200,21 @@ export const AdminLayout: React.FC = () => {
             </div>
           )}
 
-          {isCollapsed ? (
-            /* Collapsed State: Centered User Avatar Logo Button */
-            <div className="p-3.5 flex items-center justify-center">
+          <div className="p-3 h-16 flex items-center">
+            {isCollapsed ? (
+              /* Collapsed State: Centered User Avatar Logo Button */
               <button
                 type="button"
                 onClick={() => setIsUserDropdownOpen((prev) => !prev)}
                 title={`Quản trị viên: ${user.fullName} (Click để mở menu)`}
-                className={`w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold text-base shadow-xs hover:scale-105 hover:border-emerald-400 transition-all cursor-pointer ${
+                className={`w-10 h-10 mx-auto rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold text-base shadow-xs hover:scale-105 hover:border-emerald-400 transition-all cursor-pointer shrink-0 ${
                   isUserDropdownOpen ? 'ring-2 ring-emerald-500/40 border-emerald-500' : ''
                 }`}
               >
                 👑
               </button>
-            </div>
-          ) : (
-            /* Expanded State: Clickable User Bar (Logo or Name opens Dropdown) */
-            <div className="p-3">
+            ) : (
+              /* Expanded State: Clickable User Bar (Logo or Name opens Dropdown) */
               <button
                 type="button"
                 onClick={() => setIsUserDropdownOpen((prev) => !prev)}
@@ -223,7 +223,7 @@ export const AdminLayout: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold text-base shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                  <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold text-base shrink-0 shadow-xs group-hover:scale-105 transition-transform">
                     👑
                   </div>
                   <div className="truncate">
@@ -240,8 +240,8 @@ export const AdminLayout: React.FC = () => {
                   }`}
                 />
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </aside>
 
