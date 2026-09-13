@@ -106,6 +106,9 @@ export const BookingPage: React.FC = () => {
       ]);
       setShowtime(stRes.data);
       setSeats(seatsRes.data);
+      if (new Date(stRes.data.startTime).getTime() <= Date.now()) {
+        setError('Suất chiếu này đã diễn ra trong quá khứ và không còn mở đặt vé.');
+      }
     } catch (err) {
       console.error('Error fetching booking data:', err);
       setError('Không tìm thấy thông tin suất chiếu hoặc ghế.');
@@ -124,7 +127,13 @@ export const BookingPage: React.FC = () => {
     }
   };
 
+  const isPastShowtime = showtime ? new Date(showtime.startTime).getTime() <= Date.now() : false;
+
   const handleToggleSeat = (seat: ShowtimeSeat) => {
+    if (isPastShowtime) {
+      setError('Suất chiếu này đã diễn ra trong quá khứ và không còn mở đặt vé.');
+      return;
+    }
     setError(null);
     if (selectedSeatIds.includes(seat.seatId)) {
       setSelectedSeatIds(selectedSeatIds.filter((id) => id !== seat.seatId));
@@ -163,6 +172,11 @@ export const BookingPage: React.FC = () => {
   };
 
   const handleProceedToBooking = async () => {
+    if (isPastShowtime) {
+      setError('Suất chiếu này đã diễn ra trong quá khứ và không còn mở đặt vé.');
+      return;
+    }
+
     if (!user) {
       openAuthModal('login');
       return;
@@ -815,7 +829,7 @@ export const BookingPage: React.FC = () => {
                 <>
                   <button
                     onClick={handleProceedToBooking}
-                    disabled={submitting || selectedSeats.length === 0}
+                    disabled={submitting || selectedSeats.length === 0 || isPastShowtime}
                     className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-sm text-white shadow-xl shadow-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] cursor-pointer"
                   >
                     {submitting ? 'Đang giữ ghế...' : 'TIẾP TỤC THANH TOÁN'}

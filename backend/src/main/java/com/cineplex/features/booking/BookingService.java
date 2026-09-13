@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,6 +87,11 @@ public class BookingService {
 
         Showtime showtime = showtimeRepository.findById(showtimeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy suất chiếu"));
+
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        if (showtime.getStartTime().isBefore(now)) {
+            throw new BadRequestException("Không thể đặt vé cho suất chiếu trong quá khứ!");
+        }
 
         // 1. Ensure user holds all requested seats
         boolean locked = seatLockService.tryHoldSeats(showtimeId, seatIds, user.getId(), seatHoldDurationSeconds);

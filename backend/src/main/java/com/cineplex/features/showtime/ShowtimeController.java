@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,22 +22,25 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ShowtimeController {
 
+    public static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
     private final ShowtimeService showtimeService;
 
     @GetMapping("/movie/{movieId}")
     public ResponseEntity<List<ShowtimeResponse>> getShowtimesByMovieAndDate(
             @PathVariable UUID movieId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        LocalDate queryDate = (date != null) ? date : LocalDate.now();
+        LocalDate queryDate = (date != null) ? date : LocalDate.now(VIETNAM_ZONE);
         return ResponseEntity.ok(showtimeService.getShowtimesByMovieAndDate(movieId, queryDate));
     }
 
     @GetMapping("/cinema/{cinemaId}")
     public ResponseEntity<List<ShowtimeResponse>> getShowtimesByCinemaAndDate(
             @PathVariable UUID cinemaId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        LocalDate queryDate = (date != null) ? date : LocalDate.now();
-        return ResponseEntity.ok(showtimeService.getShowtimesByCinemaAndDate(cinemaId, queryDate));
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false, defaultValue = "false") boolean includePast) {
+        LocalDate queryDate = (date != null) ? date : LocalDate.now(VIETNAM_ZONE);
+        return ResponseEntity.ok(showtimeService.getShowtimesByCinemaAndDate(cinemaId, queryDate, includePast));
     }
 
     @GetMapping("/{id}")

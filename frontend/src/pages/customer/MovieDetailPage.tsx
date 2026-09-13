@@ -82,6 +82,13 @@ const getEmbedUrl = (url?: string) => {
   return trimmed;
 };
 
+const formatDateToYMD = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const MovieDetailPage: React.FC = () => {
   const { idOrSlug } = useParams<{ idOrSlug: string }>();
   const navigate = useNavigate();
@@ -89,9 +96,7 @@ export const MovieDetailPage: React.FC = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [cinemas, setCinemas] = useState<Cinema[]>([]);
   const [showtimes, setShowtimes] = useState<Showtime[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(() => formatDateToYMD(new Date()));
   const [selectedCinemaId, setSelectedCinemaId] = useState<string>('ALL');
   const [loading, setLoading] = useState(true);
   const [loadingShowtimes, setLoadingShowtimes] = useState(false);
@@ -103,8 +108,8 @@ export const MovieDetailPage: React.FC = () => {
     const d = new Date();
     d.setDate(d.getDate() + i);
     return {
-      dateStr: d.toISOString().split('T')[0],
-      dayName: i === 0 ? 'Hôm nay' : i === 1 ? 'Ngày mai' : `Thứ ${d.getDay() + 1 === 1 ? 'CN' : d.getDay() + 1}`,
+      dateStr: formatDateToYMD(d),
+      dayName: i === 0 ? 'Hôm nay' : i === 1 ? 'Ngày mai' : `Thứ ${d.getDay() === 0 ? 'CN' : d.getDay() + 1}`,
       displayDate: `${d.getDate()}/${d.getMonth() + 1}`,
     };
   });
@@ -176,10 +181,13 @@ export const MovieDetailPage: React.FC = () => {
 
   const ratingInfo = getAgeRatingInfo(movie.ageRating);
 
-  // Filter showtimes by cinema if selected
-  const filteredShowtimes = showtimes.filter((s) =>
-    selectedCinemaId === 'ALL' ? true : s.room.cinemaId === selectedCinemaId
-  );
+  // Filter showtimes by cinema if selected & exclude showtimes in the past
+  const filteredShowtimes = showtimes.filter((s) => {
+    if (new Date(s.startTime).getTime() <= Date.now()) {
+      return false;
+    }
+    return selectedCinemaId === 'ALL' ? true : s.room.cinemaId === selectedCinemaId;
+  });
 
   // Group showtimes by Cinema
   const showtimesByCinema = filteredShowtimes.reduce((acc, st) => {

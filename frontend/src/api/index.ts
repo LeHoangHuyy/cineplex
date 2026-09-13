@@ -36,8 +36,8 @@ export const cinemaApi = {
 export const showtimeApi = {
   getByMovie: (movieId: string, date?: string) => 
     api.get<Showtime[]>(`/showtimes/movie/${movieId}`, { params: { date } }),
-  getByCinema: (cinemaId: string, date?: string) => 
-    api.get<Showtime[]>(`/showtimes/cinema/${cinemaId}`, { params: { date } }),
+  getByCinema: (cinemaId: string, date?: string, includePast?: boolean) => 
+    api.get<Showtime[]>(`/showtimes/cinema/${cinemaId}`, { params: { date, includePast } }),
   getById: (id: string) => 
     api.get<Showtime>(`/showtimes/${id}`),
   getSeats: (showtimeId: string) => 

@@ -4,6 +4,7 @@ services:
     container_name: cineplex-postgres
     restart: unless-stopped
     environment:
+      TZ: Asia/Ho_Chi_Minh
       POSTGRES_DB: cineplex_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgrespassword
@@ -55,6 +56,7 @@ services:
     container_name: cineplex-flyway
     command: -connectRetries=60 migrate
     environment:
+      TZ: Asia/Ho_Chi_Minh
       FLYWAY_URL: jdbc:postgresql://postgres:5432/cineplex_db
       FLYWAY_USER: postgres
       FLYWAY_PASSWORD: postgrespassword
@@ -72,6 +74,7 @@ services:
     container_name: cineplex-backend
     restart: unless-stopped
     environment:
+      TZ: Asia/Ho_Chi_Minh
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/cineplex_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgrespassword

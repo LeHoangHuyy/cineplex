@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class ShowtimeService {
+
+    public static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     private final ShowtimeRepository showtimeRepository;
     private final ShowtimeSeatRepository showtimeSeatRepository;
@@ -48,20 +51,39 @@ public class ShowtimeService {
 
     @Transactional(readOnly = true)
     public List<ShowtimeResponse> getShowtimesByMovieAndDate(UUID movieId, LocalDate date) {
-        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime now = LocalDateTime.now(VIETNAM_ZONE);
+        LocalDate today = now.toLocalDate();
+
+        if (date.isBefore(today)) {
+            return List.of();
+        }
+
+        LocalDateTime start = date.isEqual(today) ? now : date.atStartOfDay();
         LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
-        List<Showtime> showtimes = showtimeRepository.findByMovieAndDate(movieId, startOfDay, endOfDay);
+        List<Showtime> showtimes = showtimeRepository.findByMovieAndDate(movieId, start, endOfDay);
+        return showtimes.stream().map(this::mapToShowtimeResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ShowtimeResponse> getShowtimesByCinemaAndDate(UUID cinemaId, LocalDate date, boolean includePast) {
+        LocalDateTime now = LocalDateTime.now(VIETNAM_ZONE);
+        LocalDate today = now.toLocalDate();
+
+        if (!includePast && date.isBefore(today)) {
+            return List.of();
+        }
+
+        LocalDateTime start = (!includePast && date.isEqual(today)) ? now : date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+
+        List<Showtime> showtimes = showtimeRepository.findByCinemaAndDate(cinemaId, start, endOfDay);
         return showtimes.stream().map(this::mapToShowtimeResponse).toList();
     }
 
     @Transactional(readOnly = true)
     public List<ShowtimeResponse> getShowtimesByCinemaAndDate(UUID cinemaId, LocalDate date) {
-        LocalDateTime startOfDay = date.atStartOfDay();
-        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
-
-        List<Showtime> showtimes = showtimeRepository.findByCinemaAndDate(cinemaId, startOfDay, endOfDay);
-        return showtimes.stream().map(this::mapToShowtimeResponse).toList();
+        return getShowtimesByCinemaAndDate(cinemaId, date, false);
     }
 
     @Transactional(readOnly = true)

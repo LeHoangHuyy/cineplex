@@ -225,7 +225,7 @@ export const ShowtimeManagePage: React.FC = () => {
   const fetchDayShowtimes = async (cinemaId: string, dateStr: string) => {
     setDayLoading(true);
     try {
-      const res = await showtimeApi.getByCinema(cinemaId, dateStr);
+      const res = await showtimeApi.getByCinema(cinemaId, dateStr, true);
       setDayShowtimes(res.data || []);
     } catch (err) {
       console.error('Error fetching day showtimes:', err);
