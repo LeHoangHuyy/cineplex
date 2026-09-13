@@ -364,23 +364,6 @@ export const BookingPage: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Countdown Timer Alert */}
-                <div
-                  className={`flex items-center justify-between p-4 rounded-2xl border ${
-                    timeLeft < 60
-                      ? 'bg-rose-50 border-rose-200 text-rose-700'
-                      : 'bg-amber-50 border-amber-200 text-amber-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 text-xs font-bold">
-                    <Clock className="w-4 h-4" />
-                    <span>Thời gian giữ ghế còn lại:</span>
-                  </div>
-                  <span className="font-mono text-base font-black tracking-wider">
-                    {formatTime(timeLeft)}
-                  </span>
-                </div>
-
                 {/* Payment Methods List: ZaloPay, Momo, VNPay */}
                 <div className="space-y-3">
                   {/* ZaloPay */}
@@ -393,8 +376,12 @@ export const BookingPage: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="w-12 h-12 rounded-2xl bg-sky-600 text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
-                        ZP
+                      <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
+                        <img
+                          src="/logos/zalopay.png"
+                          alt="ZaloPay"
+                          className="w-full h-full object-contain rounded-xl"
+                        />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -431,8 +418,12 @@ export const BookingPage: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="w-12 h-12 rounded-2xl bg-[#A50064] text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
-                        MM
+                      <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
+                        <img
+                          src="/logos/momo.png"
+                          alt="MoMo"
+                          className="w-full h-full object-contain rounded-xl"
+                        />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -469,8 +460,12 @@ export const BookingPage: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-blue-600 text-white flex items-center justify-center font-black text-xs shadow-sm shrink-0">
-                        VNPAY
+                      <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200/80 p-1.5 flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
+                        <img
+                          src="/logos/vnpay.png"
+                          alt="VNPay"
+                          className="w-full h-full object-contain"
+                        />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -609,30 +604,51 @@ export const BookingPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Action Button */}
+              {/* Action Button & Countdown */}
               {bookingStep === 'SEATS' ? (
-                <button
-                  onClick={handleProceedToBooking}
-                  disabled={submitting || selectedSeats.length === 0}
-                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-sm text-white shadow-xl shadow-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] cursor-pointer"
-                >
-                  {submitting ? 'Đang giữ ghế...' : 'TIẾP TỤC THANH TOÁN'}
-                </button>
-              ) : (
-                <button
-                  onClick={handleConfirmPayment}
-                  disabled={submitting || timeLeft === 0}
-                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-sm text-white shadow-xl shadow-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] cursor-pointer"
-                >
-                  {submitting ? 'Đang xử lý thanh toán...' : 'XÁC NHẬN THANH TOÁN'}
-                </button>
-              )}
+                <>
+                  <button
+                    onClick={handleProceedToBooking}
+                    disabled={submitting || selectedSeats.length === 0}
+                    className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-sm text-white shadow-xl shadow-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] cursor-pointer"
+                  >
+                    {submitting ? 'Đang giữ ghế...' : 'TIẾP TỤC THANH TOÁN'}
+                  </button>
 
-              <p className="text-[11px] text-slate-400 text-center leading-relaxed">
-                {bookingStep === 'SEATS'
-                  ? 'Ghế sẽ được khóa tạm thời trong 5 phút sau khi nhấn Tiếp tục'
-                  : 'Nhấn xác nhận để hoàn tất đơn đặt vé và nhận vé điện tử'}
-              </p>
+                  <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+                    Ghế sẽ được khóa tạm thời trong 5 phút sau khi nhấn Tiếp tục
+                  </p>
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <button
+                    onClick={handleConfirmPayment}
+                    disabled={submitting || timeLeft === 0}
+                    className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-sm text-white shadow-xl shadow-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] cursor-pointer"
+                  >
+                    {submitting ? 'Đang xử lý thanh toán...' : 'XÁC NHẬN THANH TOÁN'}
+                  </button>
+
+                  {/* Countdown Timer directly below button */}
+                  <div
+                    className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-xs font-bold transition-all ${
+                      timeLeft < 60
+                        ? 'bg-rose-50 border-rose-200 text-rose-700 animate-pulse'
+                        : 'bg-amber-50 border-amber-200 text-amber-800'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Còn lại:</span>
+                    <span className="font-mono text-sm font-black tracking-wider">
+                      {formatTime(timeLeft)}
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+                    Nhấn xác nhận để hoàn tất đơn đặt vé và nhận vé điện tử
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
