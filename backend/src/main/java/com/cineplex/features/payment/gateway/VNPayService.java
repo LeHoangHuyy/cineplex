@@ -41,7 +41,6 @@ public class VNPayService {
         vnpParams.put("vnp_TmnCode", tmnCode);
         vnpParams.put("vnp_Amount", String.valueOf(amount));
         vnpParams.put("vnp_CurrCode", "VND");
-        vnpParams.put("vnp_BankCode", "VNPAYQR"); // Directly display VNPAY QR code for scanning
         vnpParams.put("vnp_TxnRef", vnpTxnRef);
         vnpParams.put("vnp_OrderInfo", "Thanh toan ve xem phim Cineplex - " + booking.getBookingCode());
         vnpParams.put("vnp_OrderType", "other");
