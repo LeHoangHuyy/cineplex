@@ -18,8 +18,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -59,9 +61,7 @@ public class DashboardService {
         }
 
         // Top movies by tickets sold
-        List<Booking> allConfirmedBookings = bookingRepository.findAll().stream()
-                .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
-                .collect(Collectors.toList());
+        List<Booking> allConfirmedBookings = bookingRepository.findByStatus(BookingStatus.CONFIRMED);
 
         Map<Movie, Long> movieTicketCount = new HashMap<>();
         Map<Movie, BigDecimal> movieRevenueMap = new HashMap<>();
@@ -82,7 +82,7 @@ public class DashboardService {
                         .ticketsCount(e.getValue())
                         .revenue(movieRevenueMap.getOrDefault(e.getKey(), BigDecimal.ZERO))
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         // Booking status breakdown
         Map<String, Long> statusDistribution = new HashMap<>();

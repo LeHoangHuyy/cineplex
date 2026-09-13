@@ -28,7 +28,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +52,7 @@ public class ShowtimeService {
         LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
         List<Showtime> showtimes = showtimeRepository.findByMovieAndDate(movieId, startOfDay, endOfDay);
-        return showtimes.stream().map(this::mapToShowtimeResponse).collect(Collectors.toList());
+        return showtimes.stream().map(this::mapToShowtimeResponse).toList();
     }
 
     @Transactional(readOnly = true)
@@ -62,7 +61,7 @@ public class ShowtimeService {
         LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
         List<Showtime> showtimes = showtimeRepository.findByCinemaAndDate(cinemaId, startOfDay, endOfDay);
-        return showtimes.stream().map(this::mapToShowtimeResponse).collect(Collectors.toList());
+        return showtimes.stream().map(this::mapToShowtimeResponse).toList();
     }
 
     @Transactional(readOnly = true)
@@ -72,7 +71,7 @@ public class ShowtimeService {
 
         List<ShowtimeResponse> content = showtimePage.getContent().stream()
                 .map(this::mapToShowtimeResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         return PageResponse.of(showtimePage, content);
     }
@@ -88,7 +87,7 @@ public class ShowtimeService {
                 ? showtimeRepository.findByRoomCinemaIdOrderByStartTimeDesc(cinemaId)
                 : showtimeRepository.findAllByOrderByStartTimeDesc();
 
-        return showtimes.stream().map(this::mapToShowtimeResponse).collect(Collectors.toList());
+        return showtimes.stream().map(this::mapToShowtimeResponse).toList();
     }
 
     @Transactional(readOnly = true)
@@ -129,7 +128,7 @@ public class ShowtimeService {
                     .status(status)
                     .isHeldByCurrentUser(isHeldByCurrentUser)
                     .build();
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @Transactional

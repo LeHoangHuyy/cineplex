@@ -20,6 +20,10 @@ import com.cineplex.features.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -29,7 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -166,17 +169,17 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<BookingResponse> getUserBookings(UUID userId, BookingStatus status, org.springframework.data.domain.Pageable pageable) {
+    public PageResponse<BookingResponse> getUserBookings(UUID userId, BookingStatus status, Pageable pageable) {
         BookingStatus targetStatus = (status != null) ? status : BookingStatus.CONFIRMED;
-        org.springframework.data.domain.Page<Booking> bookingPage = bookingRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, targetStatus, pageable);
+        Page<Booking> bookingPage = bookingRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, targetStatus, pageable);
         List<BookingResponse> content = bookingPage.getContent().stream()
                 .map(this::mapToBookingResponse)
-                .collect(Collectors.toList());
+                .toList();
         return PageResponse.of(bookingPage, content);
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<BookingResponse> getUserBookings(UUID userId, org.springframework.data.domain.Pageable pageable) {
+    public PageResponse<BookingResponse> getUserBookings(UUID userId, Pageable pageable) {
         return getUserBookings(userId, BookingStatus.CONFIRMED, pageable);
     }
 
@@ -184,28 +187,28 @@ public class BookingService {
     public List<BookingResponse> getUserBookings(UUID userId) {
         return bookingRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, BookingStatus.CONFIRMED).stream()
                 .map(this::mapToBookingResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<BookingResponse> getAllBookings(BookingStatus status, String search, org.springframework.data.domain.Pageable pageable) {
+    public PageResponse<BookingResponse> getAllBookings(BookingStatus status, String search, Pageable pageable) {
         if (!pageable.getSort().isSorted()) {
-            pageable = org.springframework.data.domain.PageRequest.of(
+            pageable = PageRequest.of(
                     pageable.getPageNumber(),
                     pageable.getPageSize(),
-                    org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")
+                    Sort.by(Sort.Direction.DESC, "createdAt")
             );
         }
         String cleanSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
-        org.springframework.data.domain.Page<Booking> bookingPage = bookingRepository.searchBookings(status, cleanSearch, pageable);
+        Page<Booking> bookingPage = bookingRepository.searchBookings(status, cleanSearch, pageable);
         List<BookingResponse> content = bookingPage.getContent().stream()
                 .map(this::mapToBookingResponse)
-                .collect(Collectors.toList());
+                .toList();
         return PageResponse.of(bookingPage, content);
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<BookingResponse> getAllBookings(org.springframework.data.domain.Pageable pageable) {
+    public PageResponse<BookingResponse> getAllBookings(Pageable pageable) {
         return getAllBookings(null, null, pageable);
     }
 
@@ -213,7 +216,7 @@ public class BookingService {
     public List<BookingResponse> getAllBookings() {
         return bookingRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(this::mapToBookingResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
@@ -232,7 +235,7 @@ public class BookingService {
             // Release Redis seat locks
             List<UUID> seatIds = booking.getTickets().stream()
                     .map(t -> t.getShowtimeSeat().getSeat().getId())
-                    .collect(Collectors.toList());
+                    .toList();
 
             seatLockService.releaseSeats(booking.getShowtime().getId(), seatIds);
             log.info("Booking {} cancelled by user {}, released {} seats", booking.getBookingCode(), user.getId(), seatIds.size());
@@ -250,7 +253,7 @@ public class BookingService {
                         .seatType(t.getShowtimeSeat().getSeat().getSeatType())
                         .price(t.getPrice())
                         .qrCodeBase64(t.getQrCodeBase64())
-                        .build()).collect(Collectors.toList())
+                        .build()).toList()
                 : new ArrayList<>();
 
         return BookingResponse.builder()

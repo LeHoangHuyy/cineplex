@@ -6,12 +6,13 @@ import com.cineplex.features.auth.AuthResponse;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,10 +23,10 @@ public class UserService {
     @Transactional(readOnly = true)
     public PageResponse<AuthResponse> getAllUsers(String status, String search, Pageable pageable) {
         if (!pageable.getSort().isSorted()) {
-            pageable = org.springframework.data.domain.PageRequest.of(
+            pageable = PageRequest.of(
                     pageable.getPageNumber(),
                     pageable.getPageSize(),
-                    org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")
+                    Sort.by(Sort.Direction.DESC, "createdAt")
             );
         }
         UserStatus userStatus = null;
@@ -44,7 +45,7 @@ public class UserService {
                 .role(u.getRole())
                 .status(u.getStatus())
                 .createdAt(u.getCreatedAt())
-                .build()).collect(Collectors.toList());
+                .build()).toList();
         return PageResponse.of(userPage, content);
     }
 
@@ -67,7 +68,8 @@ public class UserService {
                 .phone(u.getPhone())
                 .role(u.getRole())
                 .status(u.getStatus())
-                .build()).collect(Collectors.toList());
+                .createdAt(u.getCreatedAt())
+                .build()).toList();
     }
 
     @Transactional

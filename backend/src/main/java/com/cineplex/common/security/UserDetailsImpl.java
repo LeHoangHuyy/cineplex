@@ -15,7 +15,9 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @Getter
+@SuppressWarnings("serial")
 public class UserDetailsImpl implements UserDetails {
+    private static final long serialVersionUID = 1L;
 
     private UUID id;
     private String email;

@@ -1,5 +1,7 @@
 package com.cineplex.features.booking;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,15 +14,16 @@ import java.util.UUID;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
+    List<Booking> findByStatus(BookingStatus status);
     List<Booking> findByUserIdOrderByCreatedAtDesc(UUID userId);
-    org.springframework.data.domain.Page<Booking> findByUserIdOrderByCreatedAtDesc(UUID userId, org.springframework.data.domain.Pageable pageable);
+    Page<Booking> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
     List<Booking> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, BookingStatus status);
-    org.springframework.data.domain.Page<Booking> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, BookingStatus status, org.springframework.data.domain.Pageable pageable);
+    Page<Booking> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, BookingStatus status, Pageable pageable);
     Optional<Booking> findByBookingCode(String bookingCode);
     List<Booking> findByStatusAndExpiresAtBefore(BookingStatus status, LocalDateTime dateTime);
     List<Booking> findByUserIdAndShowtimeIdAndStatus(UUID userId, UUID showtimeId, BookingStatus status);
     List<Booking> findAllByOrderByCreatedAtDesc();
-    org.springframework.data.domain.Page<Booking> findAllByOrderByCreatedAtDesc(org.springframework.data.domain.Pageable pageable);
+    Page<Booking> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     @Query("SELECT b FROM Booking b WHERE " +
            "(:status IS NULL OR b.status = :status) AND " +
@@ -29,7 +32,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
            "LOWER(b.user.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(b.user.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(b.showtime.movie.title) LIKE LOWER(CONCAT('%', :search, '%')))")
-    org.springframework.data.domain.Page<Booking> searchBookings(@Param("status") BookingStatus status, @Param("search") String search, org.springframework.data.domain.Pageable pageable);
+    Page<Booking> searchBookings(@Param("status") BookingStatus status, @Param("search") String search, Pageable pageable);
 
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.status = 'CONFIRMED'")
     long countConfirmedBookings();

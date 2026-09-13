@@ -1,7 +1,6 @@
 package com.cineplex.features.booking;
 
 import com.cineplex.common.config.RabbitMQConfig;
-import com.cineplex.features.showtime.Showtime;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +12,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -60,7 +58,7 @@ public class BookingExpirationConsumer {
                 // Release Redis seat locks
                 List<UUID> seatIds = booking.getTickets().stream()
                         .map(t -> t.getShowtimeSeat().getSeat().getId())
-                        .collect(Collectors.toList());
+                        .toList();
 
                 seatLockService.releaseSeats(booking.getShowtime().getId(), seatIds);
             }

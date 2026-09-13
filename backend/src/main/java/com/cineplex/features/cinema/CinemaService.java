@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +23,7 @@ public class CinemaService {
                 ? cinemaRepository.findByCity(city)
                 : cinemaRepository.findAll();
 
-        return cinemas.stream().map(this::mapToCinemaResponse).collect(Collectors.toList());
+        return cinemas.stream().map(this::mapToCinemaResponse).toList();
     }
 
     @Transactional(readOnly = true)
@@ -76,7 +75,7 @@ public class CinemaService {
     public List<RoomResponse> getRoomsByCinema(UUID cinemaId) {
         return roomRepository.findByCinemaId(cinemaId).stream()
                 .map(this::mapToRoomResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
@@ -132,7 +131,7 @@ public class CinemaService {
                         .rowIndex(seat.getRowIndex())
                         .colIndex(seat.getColIndex())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
@@ -166,7 +165,7 @@ public class CinemaService {
                 .seatType(s.getSeatType())
                 .rowIndex(s.getRowIndex())
                 .colIndex(s.getColIndex())
-                .build()).collect(Collectors.toList());
+                .build()).toList();
     }
 
     private void initializeDefaultSeats(Room room) {
@@ -201,7 +200,7 @@ public class CinemaService {
 
     public CinemaResponse mapToCinemaResponse(Cinema cinema) {
         List<RoomResponse> roomResponses = (cinema.getRooms() != null)
-                ? cinema.getRooms().stream().map(this::mapToRoomResponse).collect(Collectors.toList())
+                ? cinema.getRooms().stream().map(this::mapToRoomResponse).toList()
                 : new ArrayList<>();
 
         return CinemaResponse.builder()
