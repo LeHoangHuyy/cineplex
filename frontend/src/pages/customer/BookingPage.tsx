@@ -1,11 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Film, Calendar, Clock, MapPin, Ticket, ShieldAlert, ArrowLeft, CheckCircle2, QrCode } from 'lucide-react';
+import {
+  Film,
+  Calendar,
+  Clock,
+  MapPin,
+  Ticket,
+  ShieldAlert,
+  ArrowLeft,
+  CheckCircle2,
+  CreditCard,
+  ShieldCheck,
+} from 'lucide-react';
 import { Showtime, ShowtimeSeat, Booking, PaymentMethod } from '../../types';
-import { showtimeApi, bookingApi } from '../../api';
+import { showtimeApi, bookingApi, paymentApi } from '../../api';
 import { useAuth } from '../../contexts/AuthContext';
 import { SeatMap } from '../../components/customer/SeatMap';
-import { PaymentModal } from '../../components/customer/PaymentModal';
 import { ETicketCard } from '../../components/customer/ETicketCard';
 
 export const BookingPage: React.FC = () => {
@@ -20,10 +30,14 @@ export const BookingPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Active Booking & Payment Modal
+  // Booking step: 'SEATS' -> 'PAYMENT'
+  const [bookingStep, setBookingStep] = useState<'SEATS' | 'PAYMENT'>('SEATS');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('ZALOPAY');
   const [createdBooking, setCreatedBooking] = useState<Booking | null>(null);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(300);
+
+  const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!showtimeId) return;
@@ -36,6 +50,28 @@ export const BookingPage: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [showtimeId]);
+
+  // Countdown timer in PAYMENT step
+  useEffect(() => {
+    if (bookingStep !== 'PAYMENT' || !createdBooking) return;
+
+    const expiry = new Date(createdBooking.expiresAt).getTime();
+    const now = new Date().getTime();
+    const remaining = Math.max(0, Math.floor((expiry - now) / 1000));
+    setTimeLeft(remaining > 0 ? remaining : 300);
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [bookingStep, createdBooking]);
 
   const fetchShowtimeAndSeats = async () => {
     if (!showtimeId) return;
@@ -81,6 +117,28 @@ export const BookingPage: React.FC = () => {
   const selectedSeats = seats.filter((s) => selectedSeatIds.includes(s.seatId));
   const totalPrice = selectedSeats.reduce((sum, s) => sum + s.price, 0);
 
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // Scroll so that the bottom of the sticky header navbar is exactly 24px above gridRef
+  const scrollToGrid = () => {
+    setTimeout(() => {
+      if (gridRef.current) {
+        const navbar = document.querySelector('header');
+        const navbarHeight = navbar ? navbar.offsetHeight : 60;
+        const gridRect = gridRef.current.getBoundingClientRect();
+        const targetY = window.scrollY + gridRect.top - navbarHeight - 24;
+        window.scrollTo({
+          top: Math.max(0, targetY),
+          behavior: 'smooth',
+        });
+      }
+    }, 50);
+  };
+
   const handleProceedToBooking = async () => {
     if (!user) {
       openAuthModal('login');
@@ -106,26 +164,52 @@ export const BookingPage: React.FC = () => {
       const res = await bookingApi.createBooking({
         showtimeId: showtimeId!,
         seatIds: selectedSeatIds,
-        paymentMethod: 'ZALOPAY',
+        paymentMethod: selectedPaymentMethod,
       });
 
       setCreatedBooking(res.data);
-      setIsPaymentModalOpen(true);
+      setBookingStep('PAYMENT');
+      scrollToGrid();
     } catch (err: any) {
       setError(
         err.response?.data?.message ||
           'Không thể giữ ghế. Ghế có thể đã bị người khác chọn. Vui lòng thử lại!'
       );
-      // Refresh seat status
       fetchSeatsOnly();
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handlePaymentSuccess = (confirmed: Booking) => {
-    setIsPaymentModalOpen(false);
-    setConfirmedBooking(confirmed);
+  const handleSelectPaymentMethod = async (method: PaymentMethod) => {
+    setSelectedPaymentMethod(method);
+    if (createdBooking) {
+      try {
+        await paymentApi.updateMethod(createdBooking.id, method);
+      } catch (err) {
+        console.error('Failed to update payment method on backend', err);
+      }
+    }
+  };
+
+  const handleBackToSeatSelection = () => {
+    setBookingStep('SEATS');
+    scrollToGrid();
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!createdBooking) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await paymentApi.confirm(createdBooking.id);
+      setConfirmedBooking(res.data);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Xác nhận thanh toán thất bại. Vui lòng thử lại.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -171,7 +255,7 @@ export const BookingPage: React.FC = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
-              className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+              className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
               title="Quay lại"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -215,7 +299,7 @@ export const BookingPage: React.FC = () => {
                 ĐẶT VÉ THÀNH CÔNG!
               </h2>
               <p className="text-xs text-slate-500">
-                Mã đơn vé <strong className="text-emerald-600">{confirmedBooking.bookingCode}</strong> đã được xác nhận. Vui lòng lưu mã QR hoặc xuất trình tại quầy soát vé.
+                Mã đơn vé <strong className="text-emerald-600">{confirmedBooking.bookingCode}</strong> đã được xác nhận. Vui lòng xuất trình mã đơn vé tại quầy hoặc ứng dụng để soát vé.
               </p>
             </div>
 
@@ -239,17 +323,190 @@ export const BookingPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          /* Normal Seat Booking Flow */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            {/* Left 2 Cols: Interactive Seat Matrix */}
-            <div className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
-              <SeatMap
-                seats={seats}
-                selectedSeatIds={selectedSeatIds}
-                onToggleSeat={handleToggleSeat}
-                maxSeats={8}
-              />
-            </div>
+          /* Seat Selection or Payment Flow */
+          <div ref={gridRef} className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            {/* Left 2 Cols: Either SeatMap or Payment Methods */}
+            {bookingStep === 'SEATS' ? (
+              <div className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                <SeatMap
+                  seats={seats}
+                  selectedSeatIds={selectedSeatIds}
+                  onToggleSeat={handleToggleSeat}
+                  maxSeats={8}
+                />
+              </div>
+            ) : (
+              /* Payment Methods Container replacing Seat Map */
+              <div className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6 animate-fadeIn">
+                {/* Header & Back Button */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-xs shrink-0">
+                      <CreditCard className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-black text-slate-900">
+                        PHƯƠNG THỨC THANH TOÁN
+                      </h2>
+                      <p className="text-xs text-slate-500">
+                        Chọn 1 phương thức thanh toán bên dưới để tiếp tục
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleBackToSeatSelection}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition self-start sm:self-auto cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Thay đổi ghế</span>
+                  </button>
+                </div>
+
+                {/* Countdown Timer Alert */}
+                <div
+                  className={`flex items-center justify-between p-4 rounded-2xl border ${
+                    timeLeft < 60
+                      ? 'bg-rose-50 border-rose-200 text-rose-700'
+                      : 'bg-amber-50 border-amber-200 text-amber-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 text-xs font-bold">
+                    <Clock className="w-4 h-4" />
+                    <span>Thời gian giữ ghế còn lại:</span>
+                  </div>
+                  <span className="font-mono text-base font-black tracking-wider">
+                    {formatTime(timeLeft)}
+                  </span>
+                </div>
+
+                {/* Payment Methods List: ZaloPay, Momo, VNPay */}
+                <div className="space-y-3">
+                  {/* ZaloPay */}
+                  <div
+                    onClick={() => handleSelectPaymentMethod('ZALOPAY')}
+                    className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-4 ${
+                      selectedPaymentMethod === 'ZALOPAY'
+                        ? 'border-sky-500 bg-sky-50/60 shadow-md shadow-sky-500/10'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-sky-600 text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
+                        ZP
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-slate-900 text-sm sm:text-base">Ví điện tử ZaloPay</h4>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-sky-100 text-sky-700">
+                            Phổ biến
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Thanh toán an toàn, tức thì qua ví điện tử ZaloPay hoặc liên kết ngân hàng
+                        </p>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <div
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          selectedPaymentMethod === 'ZALOPAY'
+                            ? 'border-sky-500 bg-sky-500 text-white'
+                            : 'border-slate-300'
+                        }`}
+                      >
+                        {selectedPaymentMethod === 'ZALOPAY' && <CheckCircle2 className="w-4 h-4" />}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* MoMo */}
+                  <div
+                    onClick={() => handleSelectPaymentMethod('MOMO')}
+                    className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-4 ${
+                      selectedPaymentMethod === 'MOMO'
+                        ? 'border-pink-500 bg-pink-50/60 shadow-md shadow-pink-500/10'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-[#A50064] text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
+                        MM
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-slate-900 text-sm sm:text-base">Ví điện tử MoMo</h4>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-pink-100 text-pink-700">
+                            Khuyên dùng
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Thanh toán siêu tốc, tiện lợi với ví điện tử MoMo
+                        </p>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <div
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          selectedPaymentMethod === 'MOMO'
+                            ? 'border-pink-500 bg-pink-500 text-white'
+                            : 'border-slate-300'
+                        }`}
+                      >
+                        {selectedPaymentMethod === 'MOMO' && <CheckCircle2 className="w-4 h-4" />}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* VNPay */}
+                  <div
+                    onClick={() => handleSelectPaymentMethod('VNPAY')}
+                    className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-4 ${
+                      selectedPaymentMethod === 'VNPAY'
+                        ? 'border-rose-500 bg-rose-50/60 shadow-md shadow-rose-500/10'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-blue-600 text-white flex items-center justify-center font-black text-xs shadow-sm shrink-0">
+                        VNPAY
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-slate-900 text-sm sm:text-base">Cổng thanh toán VNPAY</h4>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-100 text-rose-700">
+                            ATM / Visa / Bank
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Hỗ trợ hơn 40 ngân hàng tại Việt Nam, thẻ quốc tế Visa, MasterCard, JCB
+                        </p>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <div
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          selectedPaymentMethod === 'VNPAY'
+                            ? 'border-rose-500 bg-rose-500 text-white'
+                            : 'border-slate-300'
+                        }`}
+                      >
+                        {selectedPaymentMethod === 'VNPAY' && <CheckCircle2 className="w-4 h-4" />}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security Badge */}
+                <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-500 text-xs">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span>
+                    Giao dịch được mã hóa và bảo mật 256-bit SSL tiêu chuẩn quốc tế.
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Right 1 Col: Booking Summary & Action */}
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6 text-slate-800">
@@ -300,6 +557,20 @@ export const BookingPage: React.FC = () => {
                 )}
               </div>
 
+              {/* Payment Method badge when in PAYMENT step */}
+              {bookingStep === 'PAYMENT' && (
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="text-slate-500 font-medium">Phương thức:</span>
+                  <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                    {selectedPaymentMethod === 'ZALOPAY'
+                      ? 'ZaloPay'
+                      : selectedPaymentMethod === 'MOMO'
+                      ? 'MoMo'
+                      : 'VNPay'}
+                  </span>
+                </div>
+              )}
+
               {/* Total Calculation */}
               <div className="pt-4 border-t border-slate-100 space-y-2 text-xs">
                 <div className="flex justify-between text-slate-500">
@@ -325,32 +596,47 @@ export const BookingPage: React.FC = () => {
                 </div>
               )}
 
+              {/* Timeout Warning in PAYMENT step */}
+              {bookingStep === 'PAYMENT' && timeLeft === 0 && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-600 space-y-2">
+                  <p className="font-bold">Thời gian giữ ghế đã hết hạn!</p>
+                  <button
+                    onClick={handleBackToSeatSelection}
+                    className="w-full py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition cursor-pointer"
+                  >
+                    Chọn lại ghế
+                  </button>
+                </div>
+              )}
+
               {/* Action Button */}
-              <button
-                onClick={handleProceedToBooking}
-                disabled={submitting || selectedSeats.length === 0}
-                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-sm text-white shadow-xl shadow-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
-              >
-                {submitting ? 'Đang giữ ghế...' : 'TIẾP TỤC THANH TOÁN'}
-              </button>
+              {bookingStep === 'SEATS' ? (
+                <button
+                  onClick={handleProceedToBooking}
+                  disabled={submitting || selectedSeats.length === 0}
+                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-sm text-white shadow-xl shadow-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] cursor-pointer"
+                >
+                  {submitting ? 'Đang giữ ghế...' : 'TIẾP TỤC THANH TOÁN'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleConfirmPayment}
+                  disabled={submitting || timeLeft === 0}
+                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-sm text-white shadow-xl shadow-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] cursor-pointer"
+                >
+                  {submitting ? 'Đang xử lý thanh toán...' : 'XÁC NHẬN THANH TOÁN'}
+                </button>
+              )}
 
               <p className="text-[11px] text-slate-400 text-center leading-relaxed">
-                Ghế sẽ được khóa tạm thời trong 5 phút sau khi nhấn Tiếp tục
+                {bookingStep === 'SEATS'
+                  ? 'Ghế sẽ được khóa tạm thời trong 5 phút sau khi nhấn Tiếp tục'
+                  : 'Nhấn xác nhận để hoàn tất đơn đặt vé và nhận vé điện tử'}
               </p>
             </div>
           </div>
         )}
       </div>
-
-      {/* Payment QR Modal */}
-      {createdBooking && (
-        <PaymentModal
-          booking={createdBooking}
-          isOpen={isPaymentModalOpen}
-          onClose={() => setIsPaymentModalOpen(false)}
-          onPaymentSuccess={handlePaymentSuccess}
-        />
-      )}
     </div>
   );
 };

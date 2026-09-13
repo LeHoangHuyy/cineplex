@@ -60,6 +60,8 @@ export const bookingApi = {
 export const paymentApi = {
   confirm: (bookingId: string) => 
     api.post<Booking>(`/payments/confirm/${bookingId}`),
+  updateMethod: (bookingId: string, method: string) =>
+    api.put(`/payments/method/${bookingId}`, null, { params: { method } }),
 };
 
 export const ticketApi = {

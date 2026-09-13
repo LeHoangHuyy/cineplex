@@ -3,7 +3,6 @@ package com.cineplex.features.payment;
 import com.cineplex.common.exceptions.BadRequestException;
 import com.cineplex.common.exceptions.ResourceNotFoundException;
 import com.cineplex.common.mq.RabbitMQProducer;
-import com.cineplex.common.utils.QRCodeGenerator;
 import com.cineplex.features.booking.Booking;
 import com.cineplex.features.booking.BookingRepository;
 import com.cineplex.features.booking.BookingStatus;
@@ -51,24 +50,15 @@ public class PaymentService {
         payment.setAmount(booking.getTotalAmount());
         payment.setTransactionCode("TXN-" + System.currentTimeMillis());
 
-        // Generate payment QR payload
-        String qrPayload = generatePaymentPayload(booking, paymentMethod, payment.getTransactionCode());
-        payment.setQrCodeData(qrPayload);
-        payment.setQrCodeBase64(QRCodeGenerator.generateQRCodeBase64(qrPayload, 300, 300));
-
         return paymentRepository.save(payment);
     }
 
-    private String generatePaymentPayload(Booking booking, PaymentMethod method, String txnCode) {
-        long amountLong = booking.getTotalAmount().longValue();
-        return switch (method) {
-            case ZALOPAY -> String.format("zalopay://pay?app_id=2554&app_trans_id=%s&amount=%d&description=Thanh+toan+ve+Cineplex+%s",
-                    txnCode, amountLong, booking.getBookingCode());
-            case MOMO -> String.format("2|99|0987654321|||0|0|%d|Cineplex %s|transfer_myqr",
-                    amountLong, booking.getBookingCode());
-            case VNPAY -> String.format("00020101021238580010A000000727012800069704220114CINEPLEX%s53037045408%d5802VN62150811ThanhToanVe6304",
-                    booking.getBookingCode(), amountLong);
-        };
+    @Transactional
+    public Payment updatePaymentMethod(UUID bookingId, PaymentMethod paymentMethod) {
+        Payment payment = paymentRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin thanh toán"));
+        payment.setPaymentMethod(paymentMethod);
+        return paymentRepository.save(payment);
     }
 
     @Transactional
@@ -103,10 +93,6 @@ public class PaymentService {
             showtimeSeat.setStatus(ShowtimeSeatStatus.BOOKED);
             showtimeSeatRepository.save(showtimeSeat);
             seatIds.add(showtimeSeat.getSeat().getId());
-
-            // Generate E-Ticket QR Code
-            String ticketVerificationData = generateTicketVerificationData(booking, ticket);
-            ticket.setQrCodeBase64(QRCodeGenerator.generateQRCodeBase64(ticketVerificationData, 250, 250));
             ticketRepository.save(ticket);
         }
 
@@ -118,20 +104,6 @@ public class PaymentService {
 
         log.info("Payment confirmed successfully for booking: {}", booking.getBookingCode());
         return booking;
-    }
-
-    private String generateTicketVerificationData(Booking booking, Ticket ticket) {
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
-        return String.format("CINEPLEX_PASS|TKT:%s|BOOKING:%s|MOVIE:%s|CINEMA:%s|HALL:%s|SEAT:%s|TIME:%s|PRICE:%s",
-                ticket.getTicketCode(),
-                booking.getBookingCode(),
-                booking.getShowtime().getMovie().getTitle(),
-                booking.getShowtime().getRoom().getCinema().getName(),
-                booking.getShowtime().getRoom().getName(),
-                ticket.getShowtimeSeat().getSeat().getSeatCode(),
-                booking.getShowtime().getStartTime().format(dtf),
-                ticket.getPrice().toString()
-        );
     }
 
     public PaymentResponse mapToPaymentResponse(Payment payment) {

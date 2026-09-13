@@ -34,8 +34,8 @@
   - Trạng thái ghế thời gian thực: *Ghế trống*, *Đang chọn*, *Đang được người khác giữ chỗ (Redis Lock)*, *Đã bán*.
   - Tự động tính tiền theo hệ số ghế (VIP: $1.2\times$, Couple: $1.8\times$).
 - **Đặt vé & Giữ chỗ**: Tạo đơn đặt vé, khóa giữ ghế tạm thời trong **5 phút** chống double-booking.
-- **Thanh toán QR Code**: Thanh toán trực tuyến quét mã QR qua 3 cổng thanh toán: **ZaloPay**, **MoMo**, **VNPay** (kèm đồng hồ đếm ngược thời hạn thanh toán và nút mô phỏng quét thanh toán tức thì).
-- **Vé điện tử (E-Ticket)**: Tự động sinh vé điện tử chuẩn Cinema Pass kèm mã QR kiểm soát vé được sinh bằng thư viện ZXing, xem chi tiết vé, in vé và tra cứu toàn bộ lịch sử mua vé.
+- **Thanh toán trực tuyến**: Hỗ trợ 3 cổng thanh toán: **ZaloPay**, **MoMo**, **VNPay** (kèm đồng hồ đếm ngược thời hạn giữ ghế và xác nhận thanh toán).
+- **Vé điện tử (E-Ticket)**: Tự động sinh vé điện tử chuẩn Cinema Pass kèm mã vé soát vé, xem chi tiết vé, in vé và tra cứu toàn bộ lịch sử mua vé.
 - **Soát vé**: Giao diện tra cứu và xác thực tính hợp lệ của vé điện tử dành cho nhân viên rạp.
 
 <a id="phan-he-quan-tri-vien"></a>
@@ -68,7 +68,6 @@
 | **Database Migration** | **Flyway 10 (Alpine Container)** | Tự động hóa DDL Schema & nạp Seed Data trước khi Backend khởi động |
 | **Caching & Lock**| **Redis 7 (Alpine)** | Khóa ghế nguyên tử (Distributed Seat Lock), TTL đếm ngược 5 phút |
 | **Message Broker**| **RabbitMQ 3.13 (Management)**| Xử lý hàng đợi Dead-Letter Queue (DLX) giải phóng ghế khi hết hạn giữ chỗ |
-| **QR Code Engine** | **ZXing (Zebra Crossing)** | Sinh mã QR Base64 PNG cho cổng thanh toán và vé điện tử |
 | **Frontend** | **React 18 + Vite 6 + TypeScript**| Khởi động cực nhanh, Type-safety toàn diện |
 | **Giao diện & UI** | **Tailwind CSS 3 + Lucide Icons** | Giao diện Cinematic Dark Mode, hiệu ứng màn chiếu cong 3D |
 | **Biểu đồ** | **Recharts 2** | Biểu đồ doanh thu trực quan cho Admin Dashboard |
@@ -252,7 +251,7 @@ cineplex/
 ├── README.md                       # Tài liệu hướng dẫn dự án
 ├── backend/                        # REST API Backend (Spring Boot 3 + Java 21)
 │   ├── Dockerfile                  # Multi-stage Dockerfile cho Spring Boot 3
-│   ├── pom.xml                     # Maven dependencies (JPA, Security, Redis, AMQP, ZXing)
+│   ├── pom.xml                     # Maven dependencies (JPA, Security, Redis, AMQP)
 │   └── src/main/
 │       ├── java/com/cineplex/
 │       │   ├── CineplexApplication.java
@@ -262,7 +261,7 @@ cineplex/
 │       │   │   ├── exceptions/     # GlobalExceptionHandler, BadRequestException, ResourceNotFoundException
 │       │   │   ├── mq/             # RabbitMQProducer
 │       │   │   ├── security/       # JwtTokenProvider, UserDetailsServiceImpl, JwtAuthFilter
-│       │   │   └── utils/          # QRCodeGenerator (ZXing), SlugUtils
+│       │   │   └── utils/          # SlugUtils
 │       │   └── features/           # Tầng tính năng độc lập (Feature Layer / Vertical Slice)
 │       │       ├── admin/          # Admin Dashboard & Facade Controller
 │       │       ├── auth/           # Đăng ký, Đăng nhập, Profile & JWT Response

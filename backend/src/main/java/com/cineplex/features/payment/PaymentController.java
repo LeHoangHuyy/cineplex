@@ -30,5 +30,13 @@ public class PaymentController {
                 .orElse(null);
         return ResponseEntity.ok(paymentService.mapToPaymentResponse(payment));
     }
+
+    @PutMapping("/method/{bookingId}")
+    public ResponseEntity<PaymentResponse> updatePaymentMethod(
+            @PathVariable UUID bookingId,
+            @RequestParam PaymentMethod method) {
+        Payment payment = paymentService.updatePaymentMethod(bookingId, method);
+        return ResponseEntity.ok(paymentService.mapToPaymentResponse(payment));
+    }
 }
 
