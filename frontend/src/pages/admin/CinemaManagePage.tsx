@@ -431,9 +431,11 @@ export const CinemaManagePage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Số Điện Thoại</label>
+                  <label className="block font-bold text-slate-700 mb-1">Số Điện Thoại *</label>
                   <input
                     type="text"
+                    required
+                    placeholder="VD: 028.3636.8181"
                     value={cinemaPhone}
                     onChange={(e) => setCinemaPhone(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"

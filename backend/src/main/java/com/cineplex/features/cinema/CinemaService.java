@@ -37,10 +37,10 @@ public class CinemaService {
     @Transactional
     public CinemaResponse createCinema(CinemaRequest request) {
         Cinema cinema = Cinema.builder()
-                .name(request.getName())
-                .address(request.getAddress())
-                .city(request.getCity())
-                .phone(request.getPhone())
+                .name(request.getName() != null ? request.getName().trim() : null)
+                .address(request.getAddress() != null ? request.getAddress().trim() : null)
+                .city(request.getCity() != null ? request.getCity().trim() : null)
+                .phone(request.getPhone() != null ? request.getPhone().trim() : null)
                 .imageUrl(request.getImageUrl())
                 .build();
 
@@ -53,10 +53,10 @@ public class CinemaService {
         Cinema cinema = cinemaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy rạp với ID: " + id));
 
-        cinema.setName(request.getName());
-        cinema.setAddress(request.getAddress());
-        cinema.setCity(request.getCity());
-        cinema.setPhone(request.getPhone());
+        cinema.setName(request.getName() != null ? request.getName().trim() : null);
+        cinema.setAddress(request.getAddress() != null ? request.getAddress().trim() : null);
+        cinema.setCity(request.getCity() != null ? request.getCity().trim() : null);
+        cinema.setPhone(request.getPhone() != null ? request.getPhone().trim() : null);
         cinema.setImageUrl(request.getImageUrl());
 
         cinema = cinemaRepository.save(cinema);
