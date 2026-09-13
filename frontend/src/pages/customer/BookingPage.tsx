@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   CreditCard,
-  ShieldCheck,
 } from 'lucide-react';
 import { Showtime, ShowtimeSeat, Booking, PaymentMethod } from '../../types';
 import { showtimeApi, bookingApi, paymentApi } from '../../api';
@@ -492,14 +491,6 @@ export const BookingPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Security Badge */}
-                <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-500 text-xs">
-                  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <span>
-                    Giao dịch được mã hóa và bảo mật 256-bit SSL tiêu chuẩn quốc tế.
-                  </span>
-                </div>
               </div>
             )}
 
@@ -643,10 +634,6 @@ export const BookingPage: React.FC = () => {
                       {formatTime(timeLeft)}
                     </span>
                   </div>
-
-                  <p className="text-[11px] text-slate-400 text-center leading-relaxed">
-                    Nhấn xác nhận để hoàn tất đơn đặt vé và nhận vé điện tử
-                  </p>
                 </div>
               )}
             </div>
