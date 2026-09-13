@@ -62,6 +62,10 @@ export const paymentApi = {
     api.post<Booking>(`/payments/confirm/${bookingId}`),
   updateMethod: (bookingId: string, method: string) =>
     api.put(`/payments/method/${bookingId}`, null, { params: { method } }),
+  createPaymentUrl: (bookingId: string, method: string) =>
+    api.post<{ paymentUrl: string; paymentMethod: string }>(`/payments/create-url/${bookingId}`, null, { params: { method } }),
+  handleCallback: (params: Record<string, string>) =>
+    api.get<{ success: boolean; booking?: Booking; bookingId?: string; message?: string }>('/payments/callback', { params }),
 };
 
 export const ticketApi = {

@@ -1,12 +1,15 @@
 package com.cineplex.features.payment;
 
 import com.cineplex.features.booking.Booking;
+import com.cineplex.features.booking.BookingRepository;
 import com.cineplex.features.booking.BookingResponse;
 import com.cineplex.features.booking.BookingService;
-
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -16,7 +19,28 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final BookingService bookingService;
+    private final BookingRepository bookingRepository;
     private final PaymentRepository paymentRepository;
+
+    @PostMapping("/create-url/{bookingId}")
+    public ResponseEntity<PaymentUrlResponse> createPaymentUrl(
+            @PathVariable UUID bookingId,
+            @RequestParam PaymentMethod method,
+            HttpServletRequest request) {
+        PaymentUrlResponse response = paymentService.createPaymentUrl(bookingId, method, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/callback")
+    public ResponseEntity<PaymentCallbackResult> handleCallback(@RequestParam Map<String, String> params) {
+        PaymentCallbackResult result = paymentService.handlePaymentCallback(params);
+        if (result.getBookingId() != null) {
+            bookingRepository.findById(result.getBookingId()).ifPresent(booking ->
+                    result.setBooking(bookingService.mapToBookingResponse(booking))
+            );
+        }
+        return ResponseEntity.ok(result);
+    }
 
     @PostMapping("/confirm/{bookingId}")
     public ResponseEntity<BookingResponse> confirmPayment(@PathVariable UUID bookingId) {
@@ -39,4 +63,3 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.mapToPaymentResponse(payment));
     }
 }
-

@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/movies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/cinemas/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/showtimes/**").permitAll()
-                        .requestMatchers("/payments/callback/**").permitAll()
+                        .requestMatchers("/payments/callback", "/payments/callback/**").permitAll()
                         
                         // Admin endpoints
                         .requestMatchers("/admin/**").hasRole("ADMIN")

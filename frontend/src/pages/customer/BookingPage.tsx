@@ -201,12 +201,17 @@ export const BookingPage: React.FC = () => {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await paymentApi.confirm(createdBooking.id);
-      setConfirmedBooking(res.data);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const res = await paymentApi.createPaymentUrl(createdBooking.id, selectedPaymentMethod);
+      if (res.data?.paymentUrl) {
+        window.location.href = res.data.paymentUrl;
+      } else {
+        const confirmRes = await paymentApi.confirm(createdBooking.id);
+        setConfirmedBooking(confirmRes.data);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setSubmitting(false);
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Xác nhận thanh toán thất bại. Vui lòng thử lại.');
-    } finally {
+      setError(err.response?.data?.message || 'Khởi tạo thanh toán thất bại. Vui lòng thử lại.');
       setSubmitting(false);
     }
   };

@@ -14,6 +14,7 @@ import { BookingPage } from './pages/customer/BookingPage';
 import { MyTicketsPage } from './pages/customer/MyTicketsPage';
 import { ProfilePage } from './pages/customer/ProfilePage';
 import { VerifyTicketPage } from './pages/customer/VerifyTicketPage';
+import { PaymentCallbackPage } from './pages/customer/PaymentCallbackPage';
 
 // Admin Pages
 import { AdminLayout } from './pages/admin/AdminLayout';
@@ -93,6 +94,14 @@ export function App() {
             element={
               <CustomerLayout>
                 <VerifyTicketPage />
+              </CustomerLayout>
+            }
+          />
+          <Route
+            path="/payment/callback"
+            element={
+              <CustomerLayout>
+                <PaymentCallbackPage />
               </CustomerLayout>
             }
           />
