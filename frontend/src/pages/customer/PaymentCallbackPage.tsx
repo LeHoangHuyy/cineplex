@@ -10,6 +10,7 @@ import {
   Film,
   ArrowRight,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import { Booking } from '../../types';
 import { paymentApi, bookingApi } from '../../api';
@@ -24,6 +25,8 @@ export const PaymentCallbackPage: React.FC = () => {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [gatewayName, setGatewayName] = useState<string>('Cổng thanh toán');
+  const [failedBookingId, setFailedBookingId] = useState<string | null>(null);
+  const [simulating, setSimulating] = useState(false);
 
   const calledRef = useRef(false);
 
@@ -77,6 +80,9 @@ export const PaymentCallbackPage: React.FC = () => {
         }
       } else {
         setSuccess(false);
+        if (res.data.bookingId) {
+          setFailedBookingId(res.data.bookingId);
+        }
         setErrorMessage(
           res.data.message || 'Giao dịch không thành công hoặc bạn đã hủy thao tác thanh toán.'
         );
@@ -90,6 +96,23 @@ export const PaymentCallbackPage: React.FC = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSimulateSuccess = async () => {
+    if (!failedBookingId) return;
+    setSimulating(true);
+    try {
+      const res = await paymentApi.confirm(failedBookingId);
+      if (res.data) {
+        setSuccess(true);
+        setBooking(res.data);
+      }
+    } catch (err: any) {
+      console.error('Simulation failed:', err);
+      alert(err.response?.data?.message || 'Mô phỏng xác nhận thanh toán thất bại.');
+    } finally {
+      setSimulating(false);
     }
   };
 
@@ -192,6 +215,32 @@ export const PaymentCallbackPage: React.FC = () => {
             Nếu ghế của bạn vẫn còn trong thời gian giữ chỗ, bạn có thể quay lại trang đặt vé để thực hiện lại thanh toán.
           </p>
         </div>
+
+        {/* Sandbox Simulation Helper */}
+        {failedBookingId && (
+          <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-left space-y-2.5">
+            <div className="flex items-center gap-1.5 text-amber-900 font-bold text-xs">
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>Chế độ kiểm thử (Sandbox Simulator)</span>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Bạn có thể mô phỏng xác nhận thanh toán thành công để tiếp tục kiểm thử luồng xuất vé của đơn này:
+            </p>
+            <button
+              type="button"
+              onClick={handleSimulateSuccess}
+              disabled={simulating}
+              className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              {simulating ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              )}
+              <span>⚡ Xác nhận thanh toán thành công ngay</span>
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-col gap-3">
           <button

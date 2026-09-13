@@ -10,6 +10,10 @@ import {
   ArrowLeft,
   CheckCircle2,
   CreditCard,
+  ExternalLink,
+  Sparkles,
+  RefreshCw,
+  XCircle,
 } from 'lucide-react';
 import { Showtime, ShowtimeSeat, Booking, PaymentMethod } from '../../types';
 import { showtimeApi, bookingApi, paymentApi } from '../../api';
@@ -29,12 +33,13 @@ export const BookingPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Booking step: 'SEATS' -> 'PAYMENT'
-  const [bookingStep, setBookingStep] = useState<'SEATS' | 'PAYMENT'>('SEATS');
+  // Booking step: 'SEATS' -> 'PAYMENT' -> 'WAITING_PAYMENT'
+  const [bookingStep, setBookingStep] = useState<'SEATS' | 'PAYMENT' | 'WAITING_PAYMENT'>('SEATS');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('ZALOPAY');
   const [createdBooking, setCreatedBooking] = useState<Booking | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(300);
+  const [activePaymentUrl, setActivePaymentUrl] = useState<string>('');
 
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -50,9 +55,9 @@ export const BookingPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [showtimeId]);
 
-  // Countdown timer in PAYMENT step
+  // Countdown timer in PAYMENT and WAITING_PAYMENT step
   useEffect(() => {
-    if (bookingStep !== 'PAYMENT' || !createdBooking) return;
+    if ((bookingStep !== 'PAYMENT' && bookingStep !== 'WAITING_PAYMENT') || !createdBooking) return;
 
     const expiry = new Date(createdBooking.expiresAt).getTime();
     const now = new Date().getTime();
@@ -71,6 +76,25 @@ export const BookingPage: React.FC = () => {
 
     return () => clearInterval(timer);
   }, [bookingStep, createdBooking]);
+
+  // Poll booking status while in WAITING_PAYMENT step in case payment was finished in the new tab
+  useEffect(() => {
+    if (bookingStep !== 'WAITING_PAYMENT' || !createdBooking || confirmedBooking) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await bookingApi.getById(createdBooking.id);
+        if (res.data && res.data.status === 'CONFIRMED') {
+          setConfirmedBooking(res.data);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      } catch (e) {
+        // ignore polling error
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [bookingStep, createdBooking, confirmedBooking]);
 
   const fetchShowtimeAndSeats = async () => {
     if (!showtimeId) return;
@@ -203,17 +227,46 @@ export const BookingPage: React.FC = () => {
     try {
       const res = await paymentApi.createPaymentUrl(createdBooking.id, selectedPaymentMethod);
       if (res.data?.paymentUrl) {
-        window.location.href = res.data.paymentUrl;
+        setActivePaymentUrl(res.data.paymentUrl);
+        // Open official gateway checkout page in a new tab so user sees the QR code
+        window.open(res.data.paymentUrl, '_blank', 'noopener,noreferrer');
+        // Switch view to WAITING_PAYMENT with Sandbox simulator
+        setBookingStep('WAITING_PAYMENT');
+        scrollToGrid();
       } else {
         const confirmRes = await paymentApi.confirm(createdBooking.id);
         setConfirmedBooking(confirmRes.data);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        setSubmitting(false);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Khởi tạo thanh toán thất bại. Vui lòng thử lại.');
+    } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSimulateSuccess = async () => {
+    if (!createdBooking) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const confirmRes = await paymentApi.confirm(createdBooking.id);
+      setConfirmedBooking(confirmRes.data);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Mô phỏng thanh toán thất bại. Vui lòng thử lại.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSimulateFailure = () => {
+    setError('Mô phỏng: Bạn đã hủy giao dịch trên cổng thanh toán Sandbox.');
+  };
+
+  const handleBackToPaymentSelection = () => {
+    setBookingStep('PAYMENT');
+    scrollToGrid();
   };
 
   if (loading) {
@@ -329,7 +382,7 @@ export const BookingPage: React.FC = () => {
         ) : (
           /* Seat Selection or Payment Flow */
           <div ref={gridRef} className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            {/* Left 2 Cols: Either SeatMap or Payment Methods */}
+            {/* Left 2 Cols: Either SeatMap, Waiting Payment, or Payment Methods */}
             {bookingStep === 'SEATS' ? (
               <div className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
                 <SeatMap
@@ -338,6 +391,128 @@ export const BookingPage: React.FC = () => {
                   onToggleSeat={handleToggleSeat}
                   maxSeats={8}
                 />
+              </div>
+            ) : bookingStep === 'WAITING_PAYMENT' ? (
+              /* Waiting & Sandbox Simulation Screen */
+              <div className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6 animate-fadeIn">
+                {/* Header & Back Button */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shadow-xs shrink-0">
+                      <Clock className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-lg sm:text-xl font-black text-slate-900">
+                          ĐANG CHỜ THANH TOÁN
+                        </h2>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200">
+                          Sandbox Mode
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Hệ thống đã mở cổng thanh toán ở tab mới để bạn quét mã QR
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleBackToPaymentSelection}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition self-start sm:self-auto cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Đổi phương thức</span>
+                  </button>
+                </div>
+
+                {/* Gateway Info Banner */}
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 p-1 flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
+                      <img
+                        src={
+                          selectedPaymentMethod === 'ZALOPAY'
+                            ? '/logos/zalopay.png'
+                            : selectedPaymentMethod === 'MOMO'
+                            ? '/logos/momo.png'
+                            : '/logos/vnpay.png'
+                        }
+                        alt={selectedPaymentMethod}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-slate-900 text-sm sm:text-base">
+                          {selectedPaymentMethod === 'ZALOPAY'
+                            ? 'Cổng thanh toán ZaloPay'
+                            : selectedPaymentMethod === 'MOMO'
+                            ? 'Cổng thanh toán MoMo'
+                            : 'Cổng thanh toán VNPAY'}
+                        </h4>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                          Phiên giao dịch đang hoạt động
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Trang thanh toán chính thức đã được mở ở cửa sổ mới. Sau khi quét mã, hệ thống sẽ tự động đồng bộ kết quả.
+                      </p>
+                    </div>
+                  </div>
+
+                  {activePaymentUrl && (
+                    <a
+                      href={activePaymentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-xs transition shadow-xs shrink-0 cursor-pointer"
+                    >
+                      <span>Mở lại trang QR</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+
+                {/* Sandbox Simulation Panel */}
+                <div className="p-5 sm:p-6 rounded-2xl border-2 border-dashed border-emerald-300 bg-gradient-to-br from-emerald-50/60 via-white to-teal-50/60 space-y-4 shadow-xs">
+                  <div className="flex items-center gap-2 text-emerald-800">
+                    <Sparkles className="w-5 h-5 text-emerald-600" />
+                    <h4 className="font-black text-sm uppercase tracking-wide">
+                      Bảng điều khiển mô phỏng thanh toán (Sandbox Simulator)
+                    </h4>
+                  </div>
+
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Môi trường <strong>{selectedPaymentMethod} Sandbox</strong> yêu cầu ứng dụng lập trình viên chuyên dụng trên điện thoại để quét mã. Nếu bạn không có ứng dụng test trên điện thoại, hãy sử dụng các nút bên dưới để mô phỏng kết quả giao dịch phục vụ việc kiểm thử & chấm đồ án:
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleSimulateSuccess}
+                      disabled={submitting || timeLeft === 0}
+                      className="w-full sm:w-auto flex-1 py-3.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {submitting ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4" />
+                      )}
+                      <span>⚡ Mô phỏng quét mã & Thanh toán thành công</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSimulateFailure}
+                      disabled={submitting}
+                      className="w-full sm:w-auto py-3.5 px-5 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      <span>Mô phỏng hủy giao dịch</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
               /* Payment Methods Container replacing Seat Map */
@@ -548,8 +723,8 @@ export const BookingPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Payment Method badge when in PAYMENT step */}
-              {bookingStep === 'PAYMENT' && (
+              {/* Payment Method badge when in PAYMENT or WAITING_PAYMENT step */}
+              {bookingStep !== 'SEATS' && (
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                   <span className="text-slate-500 font-medium">Phương thức:</span>
                   <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
@@ -587,8 +762,8 @@ export const BookingPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Timeout Warning in PAYMENT step */}
-              {bookingStep === 'PAYMENT' && timeLeft === 0 && (
+              {/* Timeout Warning in PAYMENT and WAITING_PAYMENT step */}
+              {bookingStep !== 'SEATS' && timeLeft === 0 && (
                 <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-600 space-y-2">
                   <p className="font-bold">Thời gian giữ ghế đã hết hạn!</p>
                   <button
@@ -615,14 +790,44 @@ export const BookingPage: React.FC = () => {
                     Ghế sẽ được khóa tạm thời trong 5 phút sau khi nhấn Tiếp tục
                   </p>
                 </>
-              ) : (
+              ) : bookingStep === 'PAYMENT' ? (
                 <div className="space-y-3">
                   <button
                     onClick={handleConfirmPayment}
                     disabled={submitting || timeLeft === 0}
                     className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-sm text-white shadow-xl shadow-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] cursor-pointer"
                   >
-                    {submitting ? 'Đang xử lý thanh toán...' : 'XÁC NHẬN THANH TOÁN'}
+                    {submitting ? 'Đang mở cổng thanh toán...' : 'XÁC NHẬN THANH TOÁN'}
+                  </button>
+
+                  {/* Countdown Timer directly below button */}
+                  <div
+                    className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-xs font-bold transition-all ${
+                      timeLeft < 60
+                        ? 'bg-rose-50 border-rose-200 text-rose-700 animate-pulse'
+                        : 'bg-amber-50 border-amber-200 text-amber-800'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Còn lại:</span>
+                    <span className="font-mono text-sm font-black tracking-wider">
+                      {formatTime(timeLeft)}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <button
+                    onClick={handleSimulateSuccess}
+                    disabled={submitting || timeLeft === 0}
+                    className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-sm text-white shadow-xl shadow-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    {submitting ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    <span>MÔ PHỎNG THÀNH CÔNG</span>
                   </button>
 
                   {/* Countdown Timer directly below button */}
