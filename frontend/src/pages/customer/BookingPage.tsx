@@ -215,8 +215,20 @@ export const BookingPage: React.FC = () => {
     }
   };
 
-  const handleBackToSeatSelection = () => {
+  const handleBackToSeatSelection = async () => {
+    if (createdBooking) {
+      try {
+        await bookingApi.cancelBooking(createdBooking.id);
+      } catch (err) {
+        console.error('Failed to cancel booking on back', err);
+      }
+    }
+    setCreatedBooking(null);
+    setSelectedSeatIds([]);
+    setActivePaymentUrl('');
+    setError(null);
     setBookingStep('SEATS');
+    fetchSeatsOnly();
     scrollToGrid();
   };
 
@@ -260,8 +272,24 @@ export const BookingPage: React.FC = () => {
     }
   };
 
-  const handleSimulateFailure = () => {
-    setError('Mô phỏng: Bạn đã hủy giao dịch trên cổng thanh toán Sandbox.');
+  const handleSimulateFailure = async () => {
+    if (createdBooking) {
+      setSubmitting(true);
+      try {
+        await bookingApi.cancelBooking(createdBooking.id);
+      } catch (err) {
+        console.error('Failed to cancel booking', err);
+      } finally {
+        setSubmitting(false);
+      }
+    }
+    setCreatedBooking(null);
+    setSelectedSeatIds([]);
+    setActivePaymentUrl('');
+    setError(null);
+    setBookingStep('SEATS');
+    fetchSeatsOnly();
+    scrollToGrid();
   };
 
   const handleBackToPaymentSelection = () => {
@@ -484,10 +512,6 @@ export const BookingPage: React.FC = () => {
                       Bảng điều khiển mô phỏng thanh toán (Sandbox Simulator)
                     </h4>
                   </div>
-
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Môi trường <strong>{selectedPaymentMethod} Sandbox</strong> yêu cầu ứng dụng lập trình viên chuyên dụng trên điện thoại để quét mã. Nếu bạn không có ứng dụng test trên điện thoại, hãy sử dụng các nút bên dưới để mô phỏng kết quả giao dịch phục vụ việc kiểm thử & chấm đồ án:
-                  </p>
 
                   <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
                     <button

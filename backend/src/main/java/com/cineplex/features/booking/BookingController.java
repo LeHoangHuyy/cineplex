@@ -56,5 +56,15 @@ public class BookingController {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(bookingService.getUserBookings(user.getId(), pageable));
     }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<Map<String, Object>> cancelBooking(@PathVariable UUID id) {
+        User user = authService.getCurrentUser();
+        bookingService.cancelBooking(id, user);
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Đã hủy đơn đặt vé và giải phóng ghế thành công"
+        ));
+    }
 }
 

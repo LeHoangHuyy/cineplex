@@ -49,6 +49,8 @@ export const bookingApi = {
     api.post<{ success: boolean; message: string }>('/bookings/hold-seats', data),
   createBooking: (data: { showtimeId: string; seatIds: string[]; paymentMethod: string }) => 
     api.post<Booking>('/bookings', data),
+  cancelBooking: (id: string) =>
+    api.post<{ success: boolean; message: string }>(`/bookings/${id}/cancel`),
   getById: (id: string) => 
     api.get<Booking>(`/bookings/${id}`),
   getByCode: (code: string) => 

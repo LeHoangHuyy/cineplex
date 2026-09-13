@@ -210,6 +210,29 @@ public class BookingService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public void cancelBooking(UUID bookingId, User user) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn đặt vé"));
+
+        if (!booking.getUser().getId().equals(user.getId())) {
+            throw new BadRequestException("Bạn không có quyền hủy đơn đặt vé này");
+        }
+
+        if (booking.getStatus() == BookingStatus.PENDING) {
+            booking.setStatus(BookingStatus.CANCELLED);
+            bookingRepository.save(booking);
+
+            // Release Redis seat locks
+            List<UUID> seatIds = booking.getTickets().stream()
+                    .map(t -> t.getShowtimeSeat().getSeat().getId())
+                    .collect(Collectors.toList());
+
+            seatLockService.releaseSeats(booking.getShowtime().getId(), seatIds);
+            log.info("Booking {} cancelled by user {}, released {} seats", booking.getBookingCode(), user.getId(), seatIds.size());
+        }
+    }
+
     public BookingResponse mapToBookingResponse(Booking booking) {
         List<TicketDto> ticketDtos = (booking.getTickets() != null)
                 ? booking.getTickets().stream().map(t -> TicketDto.builder()
