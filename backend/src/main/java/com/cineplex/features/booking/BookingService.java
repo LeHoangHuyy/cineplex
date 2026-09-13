@@ -90,6 +90,13 @@ public class BookingService {
             throw new SeatLockConflictException("Không thể giữ ghế. Một hoặc nhiều ghế đã bị người khác chọn!");
         }
 
+        // Cancel any previous pending bookings of this user for the same showtime
+        List<Booking> prevPending = bookingRepository.findByUserIdAndShowtimeIdAndStatus(user.getId(), showtimeId, BookingStatus.PENDING);
+        for (Booking pb : prevPending) {
+            pb.setStatus(BookingStatus.CANCELLED);
+            bookingRepository.save(pb);
+        }
+
         List<ShowtimeSeat> showtimeSeats = showtimeSeatRepository.findByShowtimeIdAndSeatIdIn(showtimeId, seatIds);
 
         BigDecimal totalAmount = BigDecimal.ZERO;
