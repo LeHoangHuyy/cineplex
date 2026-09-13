@@ -42,7 +42,7 @@ public class VNPayService {
         vnpParams.put("vnp_Amount", String.valueOf(amount));
         vnpParams.put("vnp_CurrCode", "VND");
         vnpParams.put("vnp_TxnRef", vnpTxnRef);
-        vnpParams.put("vnp_OrderInfo", "Thanh toan ve xem phim Cineplex - " + booking.getBookingCode());
+        vnpParams.put("vnp_OrderInfo", "Cineplex - Thanh toan ve " + booking.getBookingCode());
         vnpParams.put("vnp_OrderType", "other");
         vnpParams.put("vnp_Locale", "vn");
         vnpParams.put("vnp_ReturnUrl", returnUrl);
@@ -55,7 +55,7 @@ public class VNPayService {
         String createDate = formatter.format(calendar.getTime());
         vnpParams.put("vnp_CreateDate", createDate);
 
-        calendar.add(Calendar.MINUTE, 15);
+        calendar.add(Calendar.MINUTE, 5);
         String expireDate = formatter.format(calendar.getTime());
         vnpParams.put("vnp_ExpireDate", expireDate);
 

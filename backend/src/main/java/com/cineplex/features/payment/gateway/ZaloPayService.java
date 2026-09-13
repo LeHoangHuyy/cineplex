@@ -64,15 +64,16 @@ public class ZaloPayService {
         String item = "[]";
         Map<String, String> embedDataMap = new HashMap<>();
         embedDataMap.put("redirecturl", redirectUrl);
+        embedDataMap.put("store_name", "Cineplex");
 
         String embed_data;
         try {
             embed_data = objectMapper.writeValueAsString(embedDataMap);
         } catch (Exception e) {
-            embed_data = "{\"redirecturl\":\"" + redirectUrl + "\"}";
+            embed_data = "{\"redirecturl\":\"" + redirectUrl + "\",\"store_name\":\"Cineplex\"}";
         }
 
-        String description = "Thanh toan ve Cineplex - " + booking.getBookingCode();
+        String description = "Cineplex - Thanh toan ve " + booking.getBookingCode();
         String bank_code = ""; // Empty string for QR scan checkout
 
         String rawData = app_id + "|" + app_trans_id + "|" + app_user + "|" + amount + "|" + app_time + "|" + embed_data + "|" + item;
@@ -83,6 +84,8 @@ public class ZaloPayService {
         requestBody.put("app_user", app_user);
         requestBody.put("app_trans_id", app_trans_id);
         requestBody.put("app_time", app_time);
+        requestBody.put("expire_duration_seconds", 300L); // 5 minutes expiration
+        requestBody.put("sub_app_id", "Cineplex");
         requestBody.put("amount", amount);
         requestBody.put("item", item);
         requestBody.put("description", description);

@@ -53,7 +53,7 @@ public class MoMoService {
         long amount = booking.getTotalAmount().longValue();
         String orderId = booking.getBookingCode() + "_" + System.currentTimeMillis();
         String requestId = UUID.randomUUID().toString();
-        String orderInfo = "Thanh toan ve Cineplex - " + booking.getBookingCode();
+        String orderInfo = "Cineplex - Thanh toan ve " + booking.getBookingCode();
         String extraData = booking.getId().toString();
         String requestType = "captureWallet";
 
@@ -73,7 +73,9 @@ public class MoMoService {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("partnerCode", partnerCode);
         requestBody.put("partnerName", "Cineplex");
-        requestBody.put("storeId", "CineplexStore");
+        requestBody.put("storeName", "Cineplex");
+        requestBody.put("storeId", "Cineplex");
+        requestBody.put("orderExpireTime", 5);
         requestBody.put("requestId", requestId);
         requestBody.put("amount", amount);
         requestBody.put("orderId", orderId);

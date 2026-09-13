@@ -455,9 +455,11 @@ export const BookingPage: React.FC = () => {
                           Phiên giao dịch đang hoạt động
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Trang thanh toán chính thức đã được mở ở cửa sổ mới. Sau khi quét mã, hệ thống sẽ tự động đồng bộ kết quả.
-                      </p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-1">
+                        <span>Nhà cung cấp: <strong className="text-slate-800 font-bold">Cineplex</strong></span>
+                        <span>&bull;</span>
+                        <span>Thời hạn quét mã: <strong className="text-emerald-700 font-bold">5 phút</strong></span>
+                      </div>
                     </div>
                   </div>
 
@@ -725,15 +727,24 @@ export const BookingPage: React.FC = () => {
 
               {/* Payment Method badge when in PAYMENT or WAITING_PAYMENT step */}
               {bookingStep !== 'SEATS' && (
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-500 font-medium">Phương thức:</span>
-                  <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                    {selectedPaymentMethod === 'ZALOPAY'
-                      ? 'ZaloPay'
-                      : selectedPaymentMethod === 'MOMO'
-                      ? 'MoMo'
-                      : 'VNPay'}
-                  </span>
+                <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 font-medium">Nhà cung cấp:</span>
+                    <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                      Cineplex
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 font-medium">Phương thức:</span>
+                    <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                      {selectedPaymentMethod === 'ZALOPAY'
+                        ? 'ZaloPay'
+                        : selectedPaymentMethod === 'MOMO'
+                        ? 'MoMo'
+                        : 'VNPay'}
+                    </span>
+                  </div>
                 </div>
               )}
 
