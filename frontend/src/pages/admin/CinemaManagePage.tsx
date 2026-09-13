@@ -66,8 +66,8 @@ export const CinemaManagePage: React.FC = () => {
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [selectedCinemaForRoom, setSelectedCinemaForRoom] = useState<Cinema | null>(null);
   const [roomName, setRoomName] = useState('');
-  const [roomRows, setRoomRows] = useState(8);
-  const [roomCols, setRoomCols] = useState(12);
+  const [roomRows, setRoomRows] = useState(4);
+  const [roomCols, setRoomCols] = useState(7);
   const [roomType, setRoomType] = useState<RoomType>('STANDARD_2D');
 
   // Seat Layout Modal
@@ -193,8 +193,8 @@ export const CinemaManagePage: React.FC = () => {
   const handleOpenAddRoom = (c: Cinema) => {
     setSelectedCinemaForRoom(c);
     setRoomName(`Phòng Chiếu 0${(c.rooms?.length || 0) + 1}`);
-    setRoomRows(8);
-    setRoomCols(12);
+    setRoomRows(4);
+    setRoomCols(7);
     setRoomType('STANDARD_2D');
     setIsRoomModalOpen(true);
   };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ShowtimeSeat } from '../../types';
 import { Check, X, ShieldAlert, Sparkles, Heart } from 'lucide-react';
 
@@ -15,6 +15,10 @@ export const SeatMap: React.FC<SeatMapProps> = ({
   onToggleSeat,
   maxSeats = 8,
 }) => {
+  const hasCoupleSeats = useMemo(() => {
+    return seats.some((s) => s.seatType === 'COUPLE');
+  }, [seats]);
+
   // Group seats by seatRow (A, B, C, D...)
   const rowsMap = seats.reduce((acc, seat) => {
     if (!acc[seat.seatRow]) {
@@ -137,7 +141,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
 
       {/* Seat Map Legend */}
       <div className="mt-8 pt-6 border-t border-slate-200 w-full max-w-3xl">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 text-xs">
+        <div className={`grid ${hasCoupleSeats ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-5'} gap-3 text-xs`}>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded border border-slate-300 bg-white shadow-sm" />
             <span className="text-slate-600 text-[11px]">Ghế Thường</span>
@@ -148,12 +152,14 @@ export const SeatMap: React.FC<SeatMapProps> = ({
             </div>
             <span className="text-amber-900 text-[11px] font-bold">Ghế VIP</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-5 rounded border border-rose-300 bg-rose-50 flex items-center justify-center shadow-sm">
-              <Heart className="w-2.5 h-2.5 text-rose-500 fill-rose-500" />
+          {hasCoupleSeats && (
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-5 rounded border border-rose-300 bg-rose-50 flex items-center justify-center shadow-sm">
+                <Heart className="w-2.5 h-2.5 text-rose-500 fill-rose-500" />
+              </div>
+              <span className="text-rose-700 text-[11px] font-bold">Ghế Đôi</span>
             </div>
-            <span className="text-rose-700 text-[11px] font-bold">Ghế Đôi</span>
-          </div>
+          )}
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded bg-emerald-600 flex items-center justify-center shadow-sm">
               <Check className="w-3 h-3 text-white" />

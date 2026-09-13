@@ -175,13 +175,7 @@ public class CinemaService {
         for (int r = 0; r < room.getTotalRows(); r++) {
             String rowLetter = String.valueOf((char) (startRowChar + r));
             for (int c = 1; c <= room.getTotalCols(); c++) {
-                SeatType type = SeatType.REGULAR;
-                // Rows C, D, E are VIP
-                if (r >= 2 && r <= 4) {
-                    type = SeatType.VIP;
-                } else if (r == room.getTotalRows() - 1) { // Last row is Couple
-                    type = SeatType.COUPLE;
-                }
+                SeatType type = (r >= 2) ? SeatType.VIP : SeatType.REGULAR;
 
                 Seat seat = Seat.builder()
                         .room(room)
