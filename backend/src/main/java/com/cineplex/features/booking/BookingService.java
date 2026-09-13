@@ -166,8 +166,9 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<BookingResponse> getUserBookings(UUID userId, org.springframework.data.domain.Pageable pageable) {
-        org.springframework.data.domain.Page<Booking> bookingPage = bookingRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+    public PageResponse<BookingResponse> getUserBookings(UUID userId, BookingStatus status, org.springframework.data.domain.Pageable pageable) {
+        BookingStatus targetStatus = (status != null) ? status : BookingStatus.CONFIRMED;
+        org.springframework.data.domain.Page<Booking> bookingPage = bookingRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, targetStatus, pageable);
         List<BookingResponse> content = bookingPage.getContent().stream()
                 .map(this::mapToBookingResponse)
                 .collect(Collectors.toList());
@@ -175,8 +176,13 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<BookingResponse> getUserBookings(UUID userId, org.springframework.data.domain.Pageable pageable) {
+        return getUserBookings(userId, BookingStatus.CONFIRMED, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public List<BookingResponse> getUserBookings(UUID userId) {
-        return bookingRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+        return bookingRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, BookingStatus.CONFIRMED).stream()
                 .map(this::mapToBookingResponse)
                 .collect(Collectors.toList());
     }

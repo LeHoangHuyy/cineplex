@@ -27,8 +27,9 @@ export const MyTicketsPage: React.FC = () => {
   const fetchMyBookings = async (page: number = currentPage) => {
     setLoading(true);
     try {
-      const res = await bookingApi.getMyBookings(page - 1, ITEMS_PER_PAGE);
-      setBookings(res.data.content || []);
+      const res = await bookingApi.getMyBookings(page - 1, ITEMS_PER_PAGE, 'CONFIRMED');
+      const confirmedOnly = (res.data.content || []).filter((b) => b.status === 'CONFIRMED');
+      setBookings(confirmedOnly);
       setTotalPages(res.data.totalPages || 1);
       setTotalElements(res.data.totalElements || 0);
     } catch (err) {
@@ -73,7 +74,7 @@ export const MyTicketsPage: React.FC = () => {
             VÉ CỦA TÔI & LỊCH SỬ ĐẶT VÉ
           </h1>
           <p className="text-xs text-slate-500">
-            Danh sách tất cả các vé xem phim bạn đã đặt trên hệ thống Cineplex.
+            Danh sách các vé xem phim đã thanh toán thành công trên hệ thống Cineplex.
           </p>
         </div>
 
@@ -106,7 +107,7 @@ export const MyTicketsPage: React.FC = () => {
         ) : bookings.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-3">
             <Film className="w-12 h-12 text-slate-400 mx-auto" />
-            <h4 className="text-lg font-bold text-slate-800">Bạn chưa có đơn đặt vé nào</h4>
+            <h4 className="text-lg font-bold text-slate-800">Bạn chưa có vé đã thanh toán nào</h4>
             <p className="text-xs text-slate-500">
               Hãy chọn những bộ phim bom tấn hấp dẫn và đặt vé ngay hôm nay!
             </p>
@@ -165,7 +166,7 @@ export const MyTicketsPage: React.FC = () => {
                               : 'bg-amber-50 text-amber-700 border border-amber-200'
                           }`}
                         >
-                          {isConfirmed ? 'ĐÃ XÁC NHẬN' : booking.status}
+                          {isConfirmed ? 'ĐÃ THANH TOÁN' : booking.status}
                         </span>
                         <span className="font-mono text-slate-400 font-semibold">{booking.bookingCode}</span>
                       </div>

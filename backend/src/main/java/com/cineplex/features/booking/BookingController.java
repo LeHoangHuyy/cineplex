@@ -50,11 +50,12 @@ public class BookingController {
 
     @GetMapping("/my-bookings")
     public ResponseEntity<PageResponse<BookingResponse>> getMyBookings(
+            @RequestParam(required = false, defaultValue = "CONFIRMED") BookingStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         User user = authService.getCurrentUser();
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(bookingService.getUserBookings(user.getId(), pageable));
+        return ResponseEntity.ok(bookingService.getUserBookings(user.getId(), status, pageable));
     }
 
     @PostMapping("/{id}/cancel")

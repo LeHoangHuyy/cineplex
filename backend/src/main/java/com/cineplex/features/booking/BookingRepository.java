@@ -14,6 +14,8 @@ import java.util.UUID;
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findByUserIdOrderByCreatedAtDesc(UUID userId);
     org.springframework.data.domain.Page<Booking> findByUserIdOrderByCreatedAtDesc(UUID userId, org.springframework.data.domain.Pageable pageable);
+    List<Booking> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, BookingStatus status);
+    org.springframework.data.domain.Page<Booking> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, BookingStatus status, org.springframework.data.domain.Pageable pageable);
     Optional<Booking> findByBookingCode(String bookingCode);
     List<Booking> findByStatusAndExpiresAtBefore(BookingStatus status, LocalDateTime dateTime);
     List<Booking> findByUserIdAndShowtimeIdAndStatus(UUID userId, UUID showtimeId, BookingStatus status);

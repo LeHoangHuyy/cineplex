@@ -55,8 +55,8 @@ export const bookingApi = {
     api.get<Booking>(`/bookings/${id}`),
   getByCode: (code: string) => 
     api.get<Booking>(`/bookings/code/${code}`),
-  getMyBookings: (page?: number, size?: number) => 
-    api.get<PageResponse<Booking>>('/bookings/my-bookings', { params: { page, size } }),
+  getMyBookings: (page?: number, size?: number, status: string = 'CONFIRMED') => 
+    api.get<PageResponse<Booking>>('/bookings/my-bookings', { params: { page, size, status } }),
 };
 
 export const paymentApi = {
