@@ -36,22 +36,6 @@ public class MovieService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<MovieResponse> getAllMovies(MovieStatus status, Pageable pageable) {
-        return getAllMovies(status, null, pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public List<MovieResponse> getAllMovies(MovieStatus status) {
-        List<Movie> movies;
-        if (status != null) {
-            movies = movieRepository.findByStatus(status);
-        } else {
-            movies = movieRepository.findAll();
-        }
-        return movies.stream().map(this::mapToResponse).toList();
-    }
-
-    @Transactional(readOnly = true)
     public MovieResponse getMovieById(UUID id) {
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phim với ID: " + id));

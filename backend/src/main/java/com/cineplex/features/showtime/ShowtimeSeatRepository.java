@@ -16,8 +16,6 @@ public interface ShowtimeSeatRepository extends JpaRepository<ShowtimeSeat, UUID
            "WHERE ss.showtime.id = :showtimeId ORDER BY ss.seat.rowIndex ASC, ss.seat.colIndex ASC")
     List<ShowtimeSeat> findByShowtimeIdWithSeatOrderByPosition(@Param("showtimeId") UUID showtimeId);
 
-    Optional<ShowtimeSeat> findByShowtimeIdAndSeatId(UUID showtimeId, UUID seatId);
-
     List<ShowtimeSeat> findByShowtimeIdAndSeatIdIn(UUID showtimeId, List<UUID> seatIds);
 }
 

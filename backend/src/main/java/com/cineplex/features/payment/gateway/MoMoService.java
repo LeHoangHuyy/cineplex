@@ -119,30 +119,6 @@ public class MoMoService {
         }
     }
 
-    public boolean verifySignature(Map<String, String> params) {
-        String signature = params.get("signature");
-        if (signature == null || signature.isEmpty()) {
-            return false;
-        }
-
-        String rawSignature = "accessKey=" + accessKey +
-                "&amount=" + params.getOrDefault("amount", "") +
-                "&extraData=" + params.getOrDefault("extraData", "") +
-                "&message=" + params.getOrDefault("message", "") +
-                "&orderId=" + params.getOrDefault("orderId", "") +
-                "&orderInfo=" + params.getOrDefault("orderInfo", "") +
-                "&orderType=" + params.getOrDefault("orderType", "") +
-                "&partnerCode=" + params.getOrDefault("partnerCode", "") +
-                "&payType=" + params.getOrDefault("payType", "") +
-                "&requestId=" + params.getOrDefault("requestId", "") +
-                "&responseTime=" + params.getOrDefault("responseTime", "") +
-                "&resultCode=" + params.getOrDefault("resultCode", "") +
-                "&transId=" + params.getOrDefault("transId", "");
-
-        String calculatedSignature = hmacSHA256(secretKey, rawSignature);
-        return calculatedSignature.equalsIgnoreCase(signature);
-    }
-
     public static String hmacSHA256(String key, String data) {
         try {
             Mac sha256_HMAC = Mac.getInstance("HmacSHA256");

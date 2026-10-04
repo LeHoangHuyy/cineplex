@@ -11,14 +11,14 @@ import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 @Service
 @Slf4j
@@ -54,15 +54,13 @@ public class VNPayService {
         vnpParams.put("vnp_ReturnUrl", returnUrl);
         vnpParams.put("vnp_IpAddr", ipAddress);
 
-        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-        formatter.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
-        String createDate = formatter.format(calendar.getTime());
+        String createDate = now.format(formatter);
         vnpParams.put("vnp_CreateDate", createDate);
 
-        calendar.add(Calendar.MINUTE, 5);
-        String expireDate = formatter.format(calendar.getTime());
+        String expireDate = now.plusMinutes(5).format(formatter);
         vnpParams.put("vnp_ExpireDate", expireDate);
 
         List<String> fieldNames = new ArrayList<>(vnpParams.keySet());
@@ -71,22 +69,17 @@ public class VNPayService {
         StringBuilder hashData = new StringBuilder();
         StringBuilder query = new StringBuilder();
 
-        for (int i = 0; i < fieldNames.size(); i++) {
-            String fieldName = fieldNames.get(i);
+        for (String fieldName : fieldNames) {
             String fieldValue = vnpParams.get(fieldName);
             if (fieldValue != null && !fieldValue.isEmpty()) {
-                if (hashData.length() > 0) {
+                if (!hashData.isEmpty()) {
                     hashData.append('&');
                     query.append('&');
                 }
-                try {
-                    hashData.append(fieldName).append('=').append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                    query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()))
-                            .append('=')
-                            .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                } catch (Exception e) {
-                    log.error("Error URL encoding VNPay parameter: {}", fieldName, e);
-                }
+                String encodedKey = URLEncoder.encode(fieldName, StandardCharsets.UTF_8);
+                String encodedVal = URLEncoder.encode(fieldValue, StandardCharsets.UTF_8);
+                hashData.append(fieldName).append('=').append(encodedVal);
+                query.append(encodedKey).append('=').append(encodedVal);
             }
         }
 
@@ -95,38 +88,6 @@ public class VNPayService {
 
         log.info("VNPay payment URL created for booking {}: {}", booking.getBookingCode(), fullUrl);
         return fullUrl;
-    }
-
-    public boolean verifyChecksum(Map<String, String> params) {
-        String secureHash = params.get("vnp_SecureHash");
-        if (secureHash == null || secureHash.isEmpty()) {
-            return false;
-        }
-
-        Map<String, String> fields = new HashMap<>(params);
-        fields.remove("vnp_SecureHash");
-        fields.remove("vnp_SecureHashType");
-
-        List<String> fieldNames = new ArrayList<>(fields.keySet());
-        Collections.sort(fieldNames);
-
-        StringBuilder hashData = new StringBuilder();
-        for (String fieldName : fieldNames) {
-            String fieldValue = fields.get(fieldName);
-            if (fieldValue != null && !fieldValue.isEmpty()) {
-                if (hashData.length() > 0) {
-                    hashData.append('&');
-                }
-                try {
-                    hashData.append(fieldName).append('=').append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                } catch (Exception e) {
-                    log.error("Error URL encoding VNPay callback param: {}", fieldName, e);
-                }
-            }
-        }
-
-        String calculatedHash = hmacSHA512(hashSecret, hashData.toString());
-        return calculatedHash.equalsIgnoreCase(secureHash);
     }
 
     public static String hmacSHA512(String key, String data) {

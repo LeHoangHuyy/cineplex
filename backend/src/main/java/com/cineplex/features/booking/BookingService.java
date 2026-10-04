@@ -185,18 +185,6 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<BookingResponse> getUserBookings(UUID userId, Pageable pageable) {
-        return getUserBookings(userId, BookingStatus.CONFIRMED, pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public List<BookingResponse> getUserBookings(UUID userId) {
-        return bookingRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, BookingStatus.CONFIRMED).stream()
-                .map(this::mapToBookingResponse)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
     public PageResponse<BookingResponse> getAllBookings(BookingStatus status, String search, Pageable pageable) {
         if (!pageable.getSort().isSorted()) {
             pageable = PageRequest.of(
@@ -211,18 +199,6 @@ public class BookingService {
                 .map(this::mapToBookingResponse)
                 .toList();
         return PageResponse.of(bookingPage, content);
-    }
-
-    @Transactional(readOnly = true)
-    public PageResponse<BookingResponse> getAllBookings(Pageable pageable) {
-        return getAllBookings(null, null, pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public List<BookingResponse> getAllBookings() {
-        return bookingRepository.findAllByOrderByCreatedAtDesc().stream()
-                .map(this::mapToBookingResponse)
-                .toList();
     }
 
     @Transactional

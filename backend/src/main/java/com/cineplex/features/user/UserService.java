@@ -11,11 +11,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -33,7 +35,9 @@ public class UserService {
         if (status != null && !status.trim().isEmpty() && !"ALL".equalsIgnoreCase(status.trim())) {
             try {
                 userStatus = UserStatus.valueOf(status.trim().toUpperCase());
-            } catch (IllegalArgumentException ignored) {}
+            } catch (IllegalArgumentException e) {
+                log.debug("Unknown UserStatus filter: {}", status);
+            }
         }
         String cleanSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         Page<User> userPage = userRepository.searchUsers(userStatus, cleanSearch, pageable);
@@ -47,29 +51,6 @@ public class UserService {
                 .createdAt(u.getCreatedAt())
                 .build()).toList();
         return PageResponse.of(userPage, content);
-    }
-
-    @Transactional(readOnly = true)
-    public PageResponse<AuthResponse> getAllUsers(String search, Pageable pageable) {
-        return getAllUsers(null, search, pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public PageResponse<AuthResponse> getAllUsers(Pageable pageable) {
-        return getAllUsers(null, null, pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public List<AuthResponse> getAllUsers() {
-        return userRepository.findAll().stream().map(u -> AuthResponse.builder()
-                .id(u.getId())
-                .email(u.getEmail())
-                .fullName(u.getFullName())
-                .phone(u.getPhone())
-                .role(u.getRole())
-                .status(u.getStatus())
-                .createdAt(u.getCreatedAt())
-                .build()).toList();
     }
 
     @Transactional

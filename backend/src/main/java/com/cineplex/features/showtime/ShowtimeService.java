@@ -82,11 +82,6 @@ public class ShowtimeService {
     }
 
     @Transactional(readOnly = true)
-    public List<ShowtimeResponse> getShowtimesByCinemaAndDate(UUID cinemaId, LocalDate date) {
-        return getShowtimesByCinemaAndDate(cinemaId, date, false);
-    }
-
-    @Transactional(readOnly = true)
     public PageResponse<ShowtimeResponse> getAllShowtimes(UUID cinemaId, String search, Pageable pageable) {
         String cleanSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         Page<Showtime> showtimePage = showtimeRepository.searchShowtimes(cinemaId, cleanSearch, pageable);
@@ -96,20 +91,6 @@ public class ShowtimeService {
                 .toList();
 
         return PageResponse.of(showtimePage, content);
-    }
-
-    @Transactional(readOnly = true)
-    public PageResponse<ShowtimeResponse> getAllShowtimes(UUID cinemaId, Pageable pageable) {
-        return getAllShowtimes(cinemaId, null, pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public List<ShowtimeResponse> getAllShowtimes(UUID cinemaId) {
-        List<Showtime> showtimes = (cinemaId != null)
-                ? showtimeRepository.findByRoomCinemaIdOrderByStartTimeDesc(cinemaId)
-                : showtimeRepository.findAllByOrderByStartTimeDesc();
-
-        return showtimes.stream().map(this::mapToShowtimeResponse).toList();
     }
 
     @Transactional(readOnly = true)

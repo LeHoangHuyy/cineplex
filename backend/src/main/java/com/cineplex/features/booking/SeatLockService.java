@@ -78,10 +78,5 @@ public class SeatLockService {
         String holder = redisTemplate.opsForValue().get(key);
         return holder != null && holder.equals(userId.toString());
     }
-
-    public String getSeatLockHolder(UUID showtimeId, UUID seatId) {
-        String key = buildKey(showtimeId, seatId);
-        return redisTemplate.opsForValue().get(key);
-    }
 }
 

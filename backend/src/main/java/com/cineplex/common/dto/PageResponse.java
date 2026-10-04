@@ -20,18 +20,6 @@ public class PageResponse<T> {
     private boolean last;
     private boolean first;
 
-    public static <T> PageResponse<T> of(Page<T> page) {
-        return PageResponse.<T>builder()
-                .content(page.getContent())
-                .page(page.getNumber())
-                .size(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .last(page.isLast())
-                .first(page.isFirst())
-                .build();
-    }
-
     public static <T, R> PageResponse<R> of(Page<T> page, List<R> content) {
         return PageResponse.<R>builder()
                 .content(content)

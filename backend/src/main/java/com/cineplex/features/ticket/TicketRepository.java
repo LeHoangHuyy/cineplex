@@ -10,9 +10,8 @@ import java.util.UUID;
 @Repository
 public interface TicketRepository extends JpaRepository<Ticket, UUID> {
     Optional<Ticket> findByTicketCode(String ticketCode);
-    List<Ticket> findByBookingId(UUID bookingId);
 
-    @Query("SELECT COUNT(t) FROM Ticket t JOIN t.booking b WHERE b.status = 'CONFIRMED'")
+    @Query("SELECT COUNT(t) FROM Ticket t JOIN t.booking b WHERE b.status = com.cineplex.features.booking.BookingStatus.CONFIRMED")
     long countSoldTickets();
 }
 

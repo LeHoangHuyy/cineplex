@@ -2,7 +2,10 @@ package com.cineplex.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -61,18 +64,18 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding bindingHoldQueue() {
-        return BindingBuilder.bind(bookingHoldQueue()).to(bookingExchange()).with(BOOKING_TIMEOUT_ROUTING_KEY);
+    public Binding bindingHoldQueue(Queue bookingHoldQueue, DirectExchange bookingExchange) {
+        return BindingBuilder.bind(bookingHoldQueue).to(bookingExchange).with(BOOKING_TIMEOUT_ROUTING_KEY);
     }
 
     @Bean
-    public Binding bindingExpiredQueue() {
-        return BindingBuilder.bind(bookingExpiredQueue()).to(bookingExchange()).with(BOOKING_PROCESS_ROUTING_KEY);
+    public Binding bindingExpiredQueue(Queue bookingExpiredQueue, DirectExchange bookingExchange) {
+        return BindingBuilder.bind(bookingExpiredQueue).to(bookingExchange).with(BOOKING_PROCESS_ROUTING_KEY);
     }
 
     @Bean
-    public Binding bindingTicketQueue() {
-        return BindingBuilder.bind(ticketGenerateQueue()).to(ticketExchange()).with(TICKET_GENERATE_ROUTING_KEY);
+    public Binding bindingTicketQueue(Queue ticketGenerateQueue, DirectExchange ticketExchange) {
+        return BindingBuilder.bind(ticketGenerateQueue).to(ticketExchange).with(TICKET_GENERATE_ROUTING_KEY);
     }
 
     @Bean
