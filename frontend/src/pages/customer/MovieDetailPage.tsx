@@ -206,7 +206,7 @@ export const MovieDetailPage: React.FC = () => {
         <img
           src={movie.bannerUrl || movie.posterUrl}
           alt={movie.title}
-          className="w-full h-full object-cover object-top opacity-40"
+          className="w-full h-full object-cover object-center opacity-40"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
       </section>
