@@ -121,10 +121,11 @@ services:
       - cineplex-net
 
   minio:
-    image: minio/minio:latest
+    image: ghcr.io/imagegenius/minio:latest
     container_name: cineplex-minio
     restart: unless-stopped
-    command: server /data --console-address ":9001"
+    entrypoint: ["minio"]
+    command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
