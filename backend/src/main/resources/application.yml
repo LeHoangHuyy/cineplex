@@ -21,6 +21,7 @@ spring:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
       port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
       timeout: 60000
 
   rabbitmq:
@@ -41,8 +42,8 @@ server:
 
 app:
   jwt:
-    secret: 9a6747f3b64f4d228f41334c979d51d4512e2f38f4d9241b3a1a6b0c2e3f4a5b
-    expiration-ms: 86400000 # 24 hours
+    secret: ${JWT_SECRET:9a6747f3b64f4d228f41334c979d51d4512e2f38f4d9241b3a1a6b0c2e3f4a5b}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24 hours
   booking:
     seat-hold-duration-seconds: 300 # 5 minutes
     cleaning-buffer-minutes: 15
@@ -58,18 +59,18 @@ app:
       tmn-code: ${VNPAY_TMN_CODE:0H3TNJQV}
       hash-secret: ${VNPAY_HASH_SECRET:ZGYMLWUZOAPQMKTOGRJFARDWFBPKGGUB}
       pay-url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
-      return-url: ${VNPAY_RETURN_URL:http://localhost:3000/payment/callback}
+      return-url: ${VNPAY_RETURN_URL:${PAYMENT_FRONTEND_RETURN_URL:http://localhost:3000/payment/callback}}
     momo:
       partner-code: ${MOMO_PARTNER_CODE:MOMOLRJZ20181206}
       access-key: ${MOMO_ACCESS_KEY:mTCKt9W3eU1m39TW}
       secret-key: ${MOMO_SECRET_KEY:SetA5RDnLHvt51AULf51DyauxUo3kDU6}
       endpoint: ${MOMO_ENDPOINT:https://test-payment.momo.vn/v2/gateway/api/create}
-      redirect-url: ${MOMO_REDIRECT_URL:http://localhost:3000/payment/callback}
-      ipn-url: ${MOMO_IPN_URL:http://localhost:3000/payment/callback}
+      redirect-url: ${MOMO_REDIRECT_URL:${PAYMENT_FRONTEND_RETURN_URL:http://localhost:3000/payment/callback}}
+      ipn-url: ${MOMO_IPN_URL:${PAYMENT_FRONTEND_RETURN_URL:http://localhost:3000/payment/callback}}
     zalopay:
       app-id: ${ZALOPAY_APP_ID:2553}
       key1: ${ZALOPAY_KEY1:PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL}
       key2: ${ZALOPAY_KEY2:kLtgPl8HHhfvMuD2wKfgccZZ4WYn9KeB}
       endpoint: ${ZALOPAY_ENDPOINT:https://sb-openapi.zalopay.vn/v2/create}
-      redirect-url: ${ZALOPAY_REDIRECT_URL:http://localhost:3000/payment/callback}
+      redirect-url: ${ZALOPAY_REDIRECT_URL:${PAYMENT_FRONTEND_RETURN_URL:http://localhost:3000/payment/callback}}
 
