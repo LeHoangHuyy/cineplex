@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   CalendarDays, Plus, Edit2, Trash2, MapPin, Film, Clock, AlertTriangle, 
-  X, Check, ChevronLeft, ChevronRight, Search, Calendar, ListFilter, 
+  X, Check, ChevronLeft, ChevronRight, ChevronDown, Search, Calendar, ListFilter, 
   Sparkles, CheckCircle2, AlertCircle, RefreshCw, Eye, ArrowRight, 
   ShieldCheck, Play, Info, Grid, SlidersHorizontal
 } from 'lucide-react';
@@ -129,6 +129,190 @@ const formatTimeVi = (dateInput: string | Date) => {
   const d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
   if (isNaN(d.getTime())) return '--:--';
   return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
+interface SearchableMovieSelectProps {
+  movies: Movie[];
+  selectedMovieId: string;
+  onSelect: (movieId: string) => void;
+}
+
+const SearchableMovieSelect: React.FC<SearchableMovieSelectProps> = ({
+  movies,
+  selectedMovieId,
+  onSelect,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedMovie = useMemo(
+    () => movies.find((m) => m.id === selectedMovieId),
+    [movies, selectedMovieId]
+  );
+
+  const filteredMovies = useMemo(() => {
+    if (!searchQuery.trim()) return movies;
+    const q = searchQuery.toLowerCase();
+    return movies.filter(
+      (m) =>
+        m.title.toLowerCase().includes(q) ||
+        (m.genre && m.genre.toLowerCase().includes(q))
+    );
+  }, [movies, searchQuery]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <label className="block font-bold text-slate-700 mb-1">Chọn Phim Chiếu *</label>
+
+      {/* Trigger Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 focus:border-emerald-500 rounded-xl py-2 px-3 text-left flex items-center justify-between gap-3 transition text-xs group cursor-pointer"
+      >
+        {selectedMovie ? (
+          <div className="flex items-center gap-2.5 min-w-0">
+            {selectedMovie.posterUrl ? (
+              <img
+                src={selectedMovie.posterUrl}
+                alt={selectedMovie.title}
+                className="w-7 h-9 object-cover rounded-md shrink-0 border border-slate-200 shadow-2xs"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="w-7 h-9 bg-slate-200 rounded-md flex items-center justify-center shrink-0">
+                <Film className="w-3.5 h-3.5 text-slate-500" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <div className="font-bold text-slate-900 truncate text-xs">{selectedMovie.title}</div>
+              <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                <span className="font-semibold text-emerald-700">{selectedMovie.durationMinutes} phút</span>
+                <span>•</span>
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                  {selectedMovie.ageRating}
+                </span>
+                {selectedMovie.genre && (
+                  <>
+                    <span>•</span>
+                    <span className="truncate max-w-[140px]">{selectedMovie.genre}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <span className="text-slate-400 font-medium">-- Vui lòng chọn phim chiếu --</span>
+        )}
+
+        <ChevronDown
+          className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-transform shrink-0 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {/* Custom Dropdown Menu */}
+      {isOpen && (
+        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden text-xs">
+          {/* Search Input */}
+          <div className="p-2 border-b border-slate-100 bg-slate-50/80">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm phim theo tên hoặc thể loại..."
+                className="w-full bg-white border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          {/* Options List */}
+          <div className="max-h-56 overflow-y-auto p-1 divide-y divide-slate-50">
+            {filteredMovies.length === 0 ? (
+              <div className="py-6 text-center text-slate-400 text-xs">
+                Không tìm thấy phim phù hợp
+              </div>
+            ) : (
+              filteredMovies.map((m) => {
+                const isSelected = m.id === selectedMovieId;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => {
+                      onSelect(m.id);
+                      setIsOpen(false);
+                      setSearchQuery('');
+                    }}
+                    className={`w-full text-left p-2 rounded-xl flex items-center gap-2.5 transition cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-50 text-emerald-950 font-semibold'
+                        : 'hover:bg-slate-100/80 text-slate-700'
+                    }`}
+                  >
+                    {m.posterUrl ? (
+                      <img
+                        src={m.posterUrl}
+                        alt={m.title}
+                        className="w-8 h-10 object-cover rounded-md shrink-0 border border-slate-200 shadow-2xs"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-8 h-10 bg-slate-200 rounded-md flex items-center justify-center shrink-0">
+                        <Film className="w-4 h-4 text-slate-400" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-slate-900 truncate text-xs">{m.title}</div>
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                        <span className="font-semibold text-emerald-700">{m.durationMinutes} phút</span>
+                        <span>•</span>
+                        <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                          {m.ageRating}
+                        </span>
+                        {m.genre && (
+                          <>
+                            <span>•</span>
+                            <span className="truncate max-w-[160px]">{m.genre}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0 mr-1" />
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export const ShowtimeManagePage: React.FC = () => {
@@ -447,6 +631,11 @@ export const ShowtimeManagePage: React.FC = () => {
     setFormError(null);
 
     // Client-side protection
+    if (!selectedMovieId) {
+      setFormError('Vui lòng chọn phim chiếu.');
+      return;
+    }
+
     if (conflictAnalysis?.hasConflict) {
       setFormError(
         `Không thể lưu vì bị trùng lịch chiếu với phim "${conflictAnalysis.conflictingMovieTitle}" (${conflictAnalysis.conflictingTimeRange}). Vui lòng đổi giờ chiếu hoặc chọn phòng khác.`
@@ -1344,75 +1533,13 @@ export const ShowtimeManagePage: React.FC = () => {
               </div>
             )}
 
-            {/* LIVE CONFLICT DETECTION ALERT BOX */}
-            {conflictAnalysis && (
-              <div className="mb-5">
-                {conflictAnalysis.hasConflict ? (
-                  <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-300 text-rose-900 text-xs space-y-2.5 shadow-xs animate-shake">
-                    <div className="flex items-start gap-2.5">
-                      <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-extrabold text-rose-800 text-sm">CẢNH BÁO TRÙNG LỊCH PHÒNG CHIẾU!</p>
-                        <p className="text-rose-700 mt-1 leading-relaxed">
-                          Khung giờ dự kiến <strong>({conflictAnalysis.proposedTimeRange})</strong> bị đè lên suất chiếu phim{' '}
-                          <span className="font-black text-rose-900">"{conflictAnalysis.conflictingMovieTitle}"</span>{' '}
-                          (<strong>{conflictAnalysis.conflictingTimeRange}</strong>) tại phòng này.
-                        </p>
-                      </div>
-                    </div>
-
-                    {conflictAnalysis.suggestedTime && (
-                      <div className="pt-2 border-t border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <span className="text-[11px] text-rose-800 font-medium">
-                          💡 Khung giờ trống sớm nhất tiếp theo: <strong>{conflictAnalysis.suggestedDisplay}</strong>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (conflictAnalysis.suggestedTime) {
-                              setStartTime(conflictAnalysis.suggestedTime);
-                            }
-                          }}
-                          className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>Đặt giờ thành {conflictAnalysis.suggestedDisplay}</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <div>
-                      <p className="font-bold text-emerald-800">Khung giờ an toàn & khả dụng!</p>
-                      <p className="text-[11px] text-emerald-700 mt-0.5">
-                        Phim chiếu đến <strong>{conflictAnalysis.movieEndTimeFormatted}</strong> • Dọn phòng đến{' '}
-                        <strong>{conflictAnalysis.expectedEndTimeFormatted}</strong> (hoàn toàn không có trùng lịch).
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             <form onSubmit={handleSaveShowtime} className="space-y-4 text-xs">
               {/* Select Movie */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Chọn Phim Chiếu *</label>
-                <select
-                  required
-                  value={selectedMovieId}
-                  onChange={(e) => setSelectedMovieId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-medium"
-                >
-                  {movies.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.title} ({m.durationMinutes} phút - {m.ageRating})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SearchableMovieSelect
+                movies={movies}
+                selectedMovieId={selectedMovieId}
+                onSelect={(id) => setSelectedMovieId(id)}
+              />
 
               {/* Cinema & Room Selection */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1542,6 +1669,58 @@ export const ShowtimeManagePage: React.FC = () => {
                   </select>
                 </div>
               </div>
+
+              {/* LIVE CONFLICT DETECTION ALERT BOX */}
+              {conflictAnalysis && (
+                <div className="pt-2">
+                  {conflictAnalysis.hasConflict ? (
+                    <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-300 text-rose-900 text-xs space-y-2.5 shadow-xs animate-shake">
+                      <div className="flex items-start gap-2.5">
+                        <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-extrabold text-rose-800 text-sm">CẢNH BÁO TRÙNG LỊCH PHÒNG CHIẾU!</p>
+                          <p className="text-rose-700 mt-1 leading-relaxed">
+                            Khung giờ dự kiến <strong>({conflictAnalysis.proposedTimeRange})</strong> bị đè lên suất chiếu phim{' '}
+                            <span className="font-black text-rose-900">"{conflictAnalysis.conflictingMovieTitle}"</span>{' '}
+                            (<strong>{conflictAnalysis.conflictingTimeRange}</strong>) tại phòng này.
+                          </p>
+                        </div>
+                      </div>
+
+                      {conflictAnalysis.suggestedTime && (
+                        <div className="pt-2 border-t border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <span className="text-[11px] text-rose-800 font-medium">
+                            💡 Khung giờ trống sớm nhất tiếp theo: <strong>{conflictAnalysis.suggestedDisplay}</strong>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (conflictAnalysis.suggestedTime) {
+                                setStartTime(conflictAnalysis.suggestedTime);
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Đặt giờ thành {conflictAnalysis.suggestedDisplay}</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <div>
+                        <p className="font-bold text-emerald-800">Khung giờ an toàn & khả dụng!</p>
+                        <p className="text-[11px] text-emerald-700 mt-0.5">
+                          Phim chiếu đến <strong>{conflictAnalysis.movieEndTimeFormatted}</strong> • Dọn phòng đến{' '}
+                          <strong>{conflictAnalysis.expectedEndTimeFormatted}</strong> (hoàn toàn không có trùng lịch).
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Form Action Buttons */}
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
