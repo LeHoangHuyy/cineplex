@@ -15,8 +15,33 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+function upgradeHttpUrls(data: any): any {
+  if (typeof data === 'string') {
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && data.startsWith('http://' + window.location.host)) {
+      return data.replace(/^http:/, 'https:');
+    }
+    return data;
+  }
+  if (Array.isArray(data)) {
+    return data.map(upgradeHttpUrls);
+  }
+  if (data !== null && typeof data === 'object') {
+    const upgraded: Record<string, any> = {};
+    for (const key of Object.keys(data)) {
+      upgraded[key] = upgradeHttpUrls(data[key]);
+    }
+    return upgraded;
+  }
+  return data;
+}
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data) {
+      response.data = upgradeHttpUrls(response.data);
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       // Auto logout if expired

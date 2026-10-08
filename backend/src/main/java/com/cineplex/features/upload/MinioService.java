@@ -40,34 +40,32 @@ public class MinioService {
                 minioClient.makeBucket(
                         MakeBucketArgs.builder().bucket(bucketName).build()
                 );
-
-                // Set public read policy for images
-                String publicReadPolicy = """
-                    {
-                      "Version": "2012-10-17",
-                      "Statement": [
-                        {
-                          "Effect": "Allow",
-                          "Principal": {"AWS": ["*"]},
-                          "Action": ["s3:GetObject"],
-                          "Resource": ["arn:aws:s3:::%s/*"]
-                        }
-                      ]
-                    }
-                    """.formatted(bucketName);
-
-                minioClient.setBucketPolicy(
-                        SetBucketPolicyArgs.builder()
-                                .bucket(bucketName)
-                                .config(publicReadPolicy)
-                                .build()
-                );
-                log.info("Đã khởi tạo thành công bucket MinIO '{}' với quyền Public Read", bucketName);
-            } else {
-                log.info("MinIO bucket '{}' đã sẵn sàng", bucketName);
             }
+
+            // Always enforce public read policy for image assets
+            String publicReadPolicy = """
+                {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": {"AWS": ["*"]},
+                      "Action": ["s3:GetObject"],
+                      "Resource": ["arn:aws:s3:::%s/*"]
+                    }
+                  ]
+                }
+                """.formatted(bucketName);
+
+            minioClient.setBucketPolicy(
+                    SetBucketPolicyArgs.builder()
+                            .bucket(bucketName)
+                            .config(publicReadPolicy)
+                            .build()
+            );
+            log.info("Đã áp dụng quyền Public Read cho bucket MinIO '{}'", bucketName);
         } catch (Exception e) {
-            log.warn("Không thể tự động khởi tạo bucket MinIO trong lúc khởi động: {}", e.getMessage());
+            log.warn("Không thể tự động khởi tạo / cập nhật quyền bucket MinIO trong lúc khởi động: {}", e.getMessage());
         }
     }
 
@@ -105,6 +103,12 @@ public class MinioService {
             String cleanPublicUrl = publicUrl.endsWith("/") 
                     ? publicUrl.substring(0, publicUrl.length() - 1) 
                     : publicUrl;
+
+            // Automatically upgrade http:// to https:// on production domains to prevent browser Mixed Content blocking
+            if (cleanPublicUrl.startsWith("http://") && !cleanPublicUrl.contains("localhost") && !cleanPublicUrl.contains("127.0.0.1")) {
+                cleanPublicUrl = "https://" + cleanPublicUrl.substring(7);
+            }
+
             return cleanPublicUrl + "/" + objectName;
         } catch (Exception e) {
             log.error("Lỗi khi lưu trữ ảnh lên MinIO: {}", e.getMessage(), e);
