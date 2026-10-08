@@ -99,7 +99,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({
         <div className="max-w-2xl space-y-4 animate-fadeIn" key={currentMovie.id}>
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/80 border border-emerald-500/50 text-emerald-400 text-xs font-bold backdrop-blur-md shadow-lg shadow-black/50">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>PHIM BOM TẤN NỔI BẬT</span>
+            <span>PHIM NỔI BẬT</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight tracking-tight [text-shadow:_0_2px_6px_rgba(0,0,0,0.95),_0_4px_16px_rgba(0,0,0,0.9),_0_8px_32px_rgba(0,0,0,0.85)] drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]">

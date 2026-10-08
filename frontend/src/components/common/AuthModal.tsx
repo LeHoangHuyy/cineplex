@@ -41,19 +41,6 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  const handleQuickLogin = async (quickEmail: string, quickPass: string) => {
-    setEmail(quickEmail);
-    setPassword(quickPass);
-    setError(null);
-    setLoading(true);
-    try {
-      await login(quickEmail, quickPass);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Đăng nhập nhanh thất bại');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div
@@ -198,28 +185,6 @@ export const AuthModal: React.FC = () => {
           </button>
         </form>
 
-        {/* Demo Accounts Quick Login Shortcut */}
-        <div className="mt-6 pt-5 border-t border-slate-200">
-          <p className="text-[11px] text-center text-slate-400 uppercase font-bold tracking-wider mb-2.5">
-            Tài Khoản Thử Nghiệm Nhanh
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('admin@cineplex.vn', 'admin123')}
-              className="px-2.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold hover:bg-amber-100 text-left transition"
-            >
-              👑 Admin (Quản trị)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('customer@cineplex.vn', 'user123')}
-              className="px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold hover:bg-emerald-100 text-left transition"
-            >
-              🎟️ Khách Hàng (Customer)
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

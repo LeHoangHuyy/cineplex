@@ -109,7 +109,7 @@ export const MyTicketsPage: React.FC = () => {
             <Film className="w-12 h-12 text-slate-400 mx-auto" />
             <h4 className="text-lg font-bold text-slate-800">Bạn chưa có vé đã thanh toán nào</h4>
             <p className="text-xs text-slate-500">
-              Hãy chọn những bộ phim bom tấn hấp dẫn và đặt vé ngay hôm nay!
+              Hãy chọn những bộ phim hấp dẫn và đặt vé ngay hôm nay!
             </p>
             <Link
               to="/movies"
