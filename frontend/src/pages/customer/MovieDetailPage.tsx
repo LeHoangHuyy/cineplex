@@ -316,6 +316,7 @@ export const MovieDetailPage: React.FC = () => {
             <div className="w-full max-w-4xl mx-auto rounded-3xl overflow-hidden shadow-2xl border border-slate-200 bg-slate-950">
               <div className="aspect-video w-full">
                 <iframe
+                  loading="eager"
                   src={getEmbedUrl(movie.trailerUrl)}
                   title={`Trailer: ${movie.title}`}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
