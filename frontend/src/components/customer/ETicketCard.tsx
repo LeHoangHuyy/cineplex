@@ -1,12 +1,15 @@
-import React from 'react';
-import { Booking, Ticket } from '../../types';
-import { Film, MapPin, Calendar, Clock, QrCode, CheckCircle, Download, Printer } from 'lucide-react';
+import React, { useState } from 'react';
+import { Booking } from '../../types';
+import { Film, MapPin, Calendar, Clock, QrCode, CheckCircle, Printer } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface ETicketCardProps {
   booking: Booking;
 }
 
 export const ETicketCard: React.FC<ETicketCardProps> = ({ booking }) => {
+  const [activeTicketIndex, setActiveTicketIndex] = useState(0);
+
   const showtime = booking.showtime;
   const movie = showtime?.movie;
   const cinema = showtime?.cinema;
@@ -24,7 +27,13 @@ export const ETicketCard: React.FC<ETicketCardProps> = ({ booking }) => {
     minute: '2-digit',
   });
 
-  const seatCodes = booking.tickets?.map((t) => t.seatCode).join(', ') || '';
+  const tickets = booking.tickets && booking.tickets.length > 0 ? booking.tickets : [];
+  const activeTicket = tickets[activeTicketIndex] || tickets[0];
+  const ticketCode = activeTicket?.ticketCode || booking.bookingCode;
+  const seatCodes = tickets.map((t) => t.seatCode).join(', ') || '';
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://cineplex.lehoanghuy.cloud';
+  const qrValue = `${origin}/verify-ticket?code=${ticketCode}`;
 
   const handlePrint = () => {
     window.print();
@@ -129,24 +138,58 @@ export const ETicketCard: React.FC<ETicketCardProps> = ({ booking }) => {
         {/* Right: QR Code & Ticket Stub */}
         <div className="sm:border-l sm:border-dashed sm:border-slate-200 sm:pl-6 flex flex-col items-center justify-between text-center">
           <div className="w-full flex flex-col items-center">
+            {/* Multi-seat ticket switcher pills */}
+            {tickets.length > 1 && (
+              <div className="w-full mb-2.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  Chọn ghế xem mã QR ({tickets.length} vé):
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap justify-center">
+                  {tickets.map((t, idx) => (
+                    <button
+                      key={t.id || idx}
+                      type="button"
+                      onClick={() => setActiveTicketIndex(idx)}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                        activeTicketIndex === idx
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {t.seatCode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Primary QR Code from Ticket */}
-            <div className="p-2.5 bg-white rounded-2xl shadow-md border border-slate-200 mb-2">
-              {booking.tickets && booking.tickets[0]?.qrCodeBase64 ? (
+            <div className="p-3 bg-white rounded-2xl shadow-md border border-slate-200 mb-2 inline-flex items-center justify-center">
+              {activeTicket?.qrCodeBase64 ? (
                 <img
-                  src={booking.tickets[0].qrCodeBase64}
-                  alt="Ticket Verification QR"
+                  src={activeTicket.qrCodeBase64}
+                  alt={`Mã QR vé ${ticketCode}`}
                   className="w-36 h-36 object-contain rounded-lg"
                 />
               ) : (
-                <div className="w-36 h-36 bg-slate-100 flex items-center justify-center text-slate-400 text-xs">
-                  Mã QR Soát Vé
-                </div>
+                <QRCodeSVG
+                  value={qrValue}
+                  size={144}
+                  level="H"
+                  includeMargin={false}
+                  className="rounded-lg"
+                />
               )}
             </div>
 
             <p className="text-[11px] font-mono font-bold text-emerald-600 tracking-wider">
-              {booking.tickets ? booking.tickets[0]?.ticketCode : booking.bookingCode}
+              {ticketCode}
             </p>
+            {activeTicket && (
+              <p className="text-[10px] font-bold text-slate-700 mt-0.5">
+                Ghế {activeTicket.seatCode} • {activeTicket.seatType}
+              </p>
+            )}
             <p className="text-[10px] text-slate-400 mt-1 leading-snug">
               Quét mã tại cổng soát vé rạp để vào xem
             </p>
@@ -155,7 +198,7 @@ export const ETicketCard: React.FC<ETicketCardProps> = ({ booking }) => {
           <div className="mt-4 pt-4 border-t border-slate-100 w-full flex items-center justify-center gap-2">
             <button
               onClick={handlePrint}
-              className="py-2 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition border border-slate-200 shadow-sm"
+              className="py-2 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition border border-slate-200 shadow-sm cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5 text-slate-600" />
               In Vé

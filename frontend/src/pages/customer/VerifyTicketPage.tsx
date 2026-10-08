@@ -1,15 +1,43 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { QrCode, Search, CheckCircle2, XCircle, ShieldAlert, LogIn, ArrowLeft } from 'lucide-react';
 import { ticketApi } from '../../api';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const VerifyTicketPage: React.FC = () => {
   const { user, isAdmin, openAuthModal } = useAuth();
+  const [searchParams] = useSearchParams();
   const [ticketCode, setTicketCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const performVerification = async (codeToVerify: string) => {
+    if (!codeToVerify.trim()) return;
+
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const res = await ticketApi.verify(codeToVerify.trim());
+      setResult(res.data);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Vé không tồn tại hoặc không hợp lệ.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const codeFromUrl = searchParams.get('code');
+    if (codeFromUrl && codeFromUrl.trim()) {
+      setTicketCode(codeFromUrl.trim());
+      if (user && isAdmin) {
+        performVerification(codeFromUrl.trim());
+      }
+    }
+  }, [searchParams, user, isAdmin]);
 
   // If not logged in or not Admin, do not display the ticket verification feature
   if (!user || !isAdmin) {
@@ -53,20 +81,7 @@ export const VerifyTicketPage: React.FC = () => {
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ticketCode.trim()) return;
-
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      const res = await ticketApi.verify(ticketCode.trim());
-      setResult(res.data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Vé không tồn tại hoặc không hợp lệ.');
-    } finally {
-      setLoading(false);
-    }
+    await performVerification(ticketCode);
   };
 
   return (
