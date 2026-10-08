@@ -3,6 +3,7 @@ package com.cineplex.features.cinema;
 import com.cineplex.common.exceptions.ResourceNotFoundException;
 
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
@@ -193,9 +194,14 @@ public class CinemaService {
     }
 
     public CinemaResponse mapToCinemaResponse(Cinema cinema) {
-        List<RoomResponse> roomResponses = (cinema.getRooms() != null)
-                ? cinema.getRooms().stream().map(this::mapToRoomResponse).toList()
-                : new ArrayList<>();
+        List<RoomResponse> roomResponses = new ArrayList<>();
+        try {
+            if (cinema.getRooms() != null) {
+                roomResponses = cinema.getRooms().stream().map(this::mapToRoomResponse).toList();
+            }
+        } catch (Exception ignored) {
+            // LazyInitializationException fallback when mapping outside active session
+        }
 
         return CinemaResponse.builder()
                 .id(cinema.getId())
@@ -209,11 +215,20 @@ public class CinemaService {
     }
 
     public RoomResponse mapToRoomResponse(Room room) {
-        int seatsCount = (room.getSeats() != null) ? room.getSeats().size() : (room.getTotalRows() * room.getTotalCols());
+        int seatsCount = (room.getTotalRows() != null && room.getTotalCols() != null)
+                ? room.getTotalRows() * room.getTotalCols()
+                : 0;
+        try {
+            if (room.getSeats() != null && Hibernate.isInitialized(room.getSeats()) && !room.getSeats().isEmpty()) {
+                seatsCount = room.getSeats().size();
+            }
+        } catch (Exception ignored) {
+        }
+
         return RoomResponse.builder()
                 .id(room.getId())
-                .cinemaId(room.getCinema().getId())
-                .cinemaName(room.getCinema().getName())
+                .cinemaId(room.getCinema() != null ? room.getCinema().getId() : null)
+                .cinemaName(room.getCinema() != null ? room.getCinema().getName() : null)
                 .name(room.getName())
                 .totalRows(room.getTotalRows())
                 .totalCols(room.getTotalCols())

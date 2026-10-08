@@ -224,6 +224,7 @@ public class BookingService {
         }
     }
 
+    @Transactional(readOnly = true)
     public BookingResponse mapToBookingResponse(Booking booking) {
         List<TicketDto> ticketDtos = (booking.getTickets() != null)
                 ? booking.getTickets().stream().map(t -> TicketDto.builder()

@@ -310,7 +310,7 @@ public class PaymentService {
 
     private BookingResponse getBookingResponse(Booking booking) {
         try {
-            return applicationContext.getBean(BookingService.class).mapToBookingResponse(booking);
+            return applicationContext.getBean(BookingService.class).getBookingById(booking.getId());
         } catch (Exception e) {
             log.warn("Could not map BookingResponse in PaymentService: {}", e.getMessage());
             return null;

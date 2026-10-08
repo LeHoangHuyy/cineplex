@@ -41,9 +41,13 @@ public class PaymentController {
     public ResponseEntity<PaymentCallbackResult> handleCallback(@RequestParam Map<String, String> params) {
         PaymentCallbackResult result = paymentService.handlePaymentCallback(params);
         if (result.getBookingId() != null) {
-            bookingRepository.findById(result.getBookingId()).ifPresent(booking ->
-                    result.setBooking(bookingService.mapToBookingResponse(booking))
-            );
+            try {
+                result.setBooking(bookingService.getBookingById(result.getBookingId()));
+            } catch (Exception e) {
+                bookingRepository.findById(result.getBookingId()).ifPresent(booking ->
+                        result.setBooking(bookingService.mapToBookingResponse(booking))
+                );
+            }
         }
         return ResponseEntity.ok(result);
     }
@@ -51,7 +55,7 @@ public class PaymentController {
     @PostMapping("/confirm/{bookingId}")
     public ResponseEntity<BookingResponse> confirmPayment(@PathVariable UUID bookingId) {
         Booking confirmedBooking = paymentService.confirmPaymentSuccess(bookingId);
-        return ResponseEntity.ok(bookingService.mapToBookingResponse(confirmedBooking));
+        return ResponseEntity.ok(bookingService.getBookingById(confirmedBooking.getId()));
     }
 
     @GetMapping("/booking/{bookingId}")
