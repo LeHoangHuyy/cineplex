@@ -14,6 +14,7 @@ import {
   Sparkles,
   RefreshCw,
   XCircle,
+  X,
 } from 'lucide-react';
 import { Showtime, ShowtimeSeat, Booking, PaymentMethod } from '../../types';
 import { showtimeApi, bookingApi, paymentApi } from '../../api';
@@ -96,6 +97,17 @@ export const BookingPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [bookingStep, createdBooking, confirmedBooking]);
 
+  // Periodic poll of seats while on SEATS step to keep seat map in sync across multiple users/browsers
+  useEffect(() => {
+    if (bookingStep !== 'SEATS' || confirmedBooking || !showtimeId) return;
+
+    const interval = setInterval(() => {
+      fetchSeatsOnly();
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [bookingStep, confirmedBooking, showtimeId]);
+
   const fetchShowtimeAndSeats = async () => {
     if (!showtimeId) return;
     setLoading(true);
@@ -121,7 +133,16 @@ export const BookingPage: React.FC = () => {
     if (!showtimeId || confirmedBooking) return;
     try {
       const seatsRes = await showtimeApi.getSeats(showtimeId);
-      setSeats(seatsRes.data);
+      const updatedSeats = seatsRes.data;
+      setSeats(updatedSeats);
+
+      // Auto-purge any seats from selectedSeatIds that are no longer AVAILABLE or held by currentUser
+      setSelectedSeatIds((prevSelected) => {
+        return prevSelected.filter((id) => {
+          const s = updatedSeats.find((seat: ShowtimeSeat) => seat.seatId === id);
+          return s && (s.status === 'AVAILABLE' || s.isHeldByCurrentUser);
+        });
+      });
     } catch (err) {
       console.error('Error refreshing seats:', err);
     }
@@ -138,6 +159,10 @@ export const BookingPage: React.FC = () => {
     if (selectedSeatIds.includes(seat.seatId)) {
       setSelectedSeatIds(selectedSeatIds.filter((id) => id !== seat.seatId));
     } else {
+      if (seat.status === 'BOOKED' || (seat.status === 'HOLDING' && !seat.isHeldByCurrentUser)) {
+        setError(`Ghế ${seat.seatCode} hiện đang được người khác giữ chỗ hoặc đã bán.`);
+        return;
+      }
       if (selectedSeatIds.length >= 8) {
         setError('Bạn chỉ có thể đặt tối đa 8 ghế trong một đơn hàng.');
         return;
@@ -208,11 +233,11 @@ export const BookingPage: React.FC = () => {
       setBookingStep('PAYMENT');
       scrollToGrid();
     } catch (err: any) {
-      setError(
+      const serverMsg =
         err.response?.data?.message ||
-          'Không thể giữ ghế. Ghế có thể đã bị người khác chọn. Vui lòng thử lại!'
-      );
-      fetchSeatsOnly();
+        'Không thể giữ ghế. Một hoặc nhiều ghế đã bị khách hàng khác chọn hoặc đặt mua!';
+      setError(`${serverMsg} Hệ thống đã cập nhật lại sơ đồ ghế, vui lòng chọn ghế trống khác.`);
+      await fetchSeatsOnly();
     } finally {
       setSubmitting(false);
     }
@@ -748,7 +773,7 @@ export const BookingPage: React.FC = () => {
                     {selectedSeats.map((s) => (
                       <span
                         key={s.seatId}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${
                           s.seatType === 'VIP'
                             ? 'bg-amber-50 text-amber-800 border border-amber-300'
                             : s.seatType === 'COUPLE'
@@ -756,7 +781,17 @@ export const BookingPage: React.FC = () => {
                             : 'bg-emerald-50 text-emerald-800 border border-emerald-300'
                         }`}
                       >
-                        {s.seatCode} ({s.seatType})
+                        <span>{s.seatCode} ({s.seatType})</span>
+                        {bookingStep === 'SEATS' && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSeat(s)}
+                            className="hover:opacity-75 transition cursor-pointer p-0.5 rounded-full hover:bg-black/5"
+                            title={`Bỏ chọn ghế ${s.seatCode}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
                       </span>
                     ))}
                   </div>

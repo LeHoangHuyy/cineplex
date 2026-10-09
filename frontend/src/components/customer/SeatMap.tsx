@@ -35,10 +35,16 @@ export const SeatMap: React.FC<SeatMapProps> = ({
     const isSelected = selectedSeatIds.includes(seat.seatId);
 
     if (seat.status === 'BOOKED') {
+      if (isSelected) {
+        return 'bg-rose-100 border-rose-500 text-rose-700 ring-2 ring-rose-400 cursor-pointer';
+      }
       return 'bg-slate-200 border-slate-200 text-slate-400 cursor-not-allowed';
     }
 
-    if (seat.status === 'HOLDING' && !seat.isHeldByCurrentUser && !isSelected) {
+    if (seat.status === 'HOLDING' && !seat.isHeldByCurrentUser) {
+      if (isSelected) {
+        return 'bg-purple-100 border-purple-500 text-purple-900 ring-2 ring-purple-400 cursor-pointer animate-pulse';
+      }
       return 'bg-purple-100 border-purple-400 text-purple-800 animate-pulse cursor-not-allowed';
     }
 
@@ -91,11 +97,12 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                     const isBooked = seat.status === 'BOOKED';
                     const isHolding = seat.status === 'HOLDING' && !seat.isHeldByCurrentUser;
                     const isCouple = seat.seatType === 'COUPLE';
+                    const isDisabled = (isBooked || isHolding) && !isSelected;
 
                     return (
                       <button
                         key={seat.seatId}
-                        disabled={isBooked || isHolding}
+                        disabled={isDisabled}
                         onClick={() => onToggleSeat(seat)}
                         className={`relative ${
                           isCouple ? 'w-16' : 'w-8 sm:w-9'
