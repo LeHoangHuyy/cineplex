@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { Navbar } from './components/common/Navbar';
@@ -6,24 +6,33 @@ import { Footer } from './components/common/Footer';
 import { AuthModal } from './components/common/AuthModal';
 import { ScrollToTop } from './components/common/ScrollToTop';
 
-// Customer Pages
+// Critical Landing Page (Eagerly loaded for fastest First Contentful Paint)
 import { HomePage } from './pages/customer/HomePage';
-import { MoviesPage } from './pages/customer/MoviesPage';
-import { MovieDetailPage } from './pages/customer/MovieDetailPage';
-import { BookingPage } from './pages/customer/BookingPage';
-import { MyTicketsPage } from './pages/customer/MyTicketsPage';
-import { ProfilePage } from './pages/customer/ProfilePage';
-import { VerifyTicketPage } from './pages/customer/VerifyTicketPage';
-import { PaymentCallbackPage } from './pages/customer/PaymentCallbackPage';
 
-// Admin Pages
-import { AdminLayout } from './pages/admin/AdminLayout';
-import { DashboardPage } from './pages/admin/DashboardPage';
-import { MovieManagePage } from './pages/admin/MovieManagePage';
-import { CinemaManagePage } from './pages/admin/CinemaManagePage';
-import { ShowtimeManagePage } from './pages/admin/ShowtimeManagePage';
-import { BookingManagePage } from './pages/admin/BookingManagePage';
-import { UserManagePage } from './pages/admin/UserManagePage';
+// Lazy Loaded Customer Pages
+const MoviesPage = lazy(() => import('./pages/customer/MoviesPage').then(m => ({ default: m.MoviesPage })));
+const MovieDetailPage = lazy(() => import('./pages/customer/MovieDetailPage').then(m => ({ default: m.MovieDetailPage })));
+const BookingPage = lazy(() => import('./pages/customer/BookingPage').then(m => ({ default: m.BookingPage })));
+const MyTicketsPage = lazy(() => import('./pages/customer/MyTicketsPage').then(m => ({ default: m.MyTicketsPage })));
+const ProfilePage = lazy(() => import('./pages/customer/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const VerifyTicketPage = lazy(() => import('./pages/customer/VerifyTicketPage').then(m => ({ default: m.VerifyTicketPage })));
+const PaymentCallbackPage = lazy(() => import('./pages/customer/PaymentCallbackPage').then(m => ({ default: m.PaymentCallbackPage })));
+
+// Lazy Loaded Admin Pages (Recharts & Management components loaded only on demand)
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
+const DashboardPage = lazy(() => import('./pages/admin/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const MovieManagePage = lazy(() => import('./pages/admin/MovieManagePage').then(m => ({ default: m.MovieManagePage })));
+const CinemaManagePage = lazy(() => import('./pages/admin/CinemaManagePage').then(m => ({ default: m.CinemaManagePage })));
+const ShowtimeManagePage = lazy(() => import('./pages/admin/ShowtimeManagePage').then(m => ({ default: m.ShowtimeManagePage })));
+const BookingManagePage = lazy(() => import('./pages/admin/BookingManagePage').then(m => ({ default: m.BookingManagePage })));
+const UserManagePage = lazy(() => import('./pages/admin/UserManagePage').then(m => ({ default: m.UserManagePage })));
+
+// Lightweight Loading Spinner Fallback for Lazy Routes
+const RouteLoadingFallback: React.FC = () => (
+  <div className="min-h-[60vh] flex items-center justify-center">
+    <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 // Customer Layout Wrapper
 const CustomerLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -39,7 +48,8 @@ export function App() {
     <AuthProvider>
       <Router>
         <ScrollToTop />
-        <Routes>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <Routes>
           {/* Customer Routes */}
           <Route
             path="/"
@@ -116,6 +126,7 @@ export function App() {
             <Route path="users" element={<UserManagePage />} />
           </Route>
         </Routes>
+        </Suspense>
 
         {/* Global Auth Modal */}
         <AuthModal />
